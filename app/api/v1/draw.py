@@ -362,9 +362,9 @@ async def get_draws_list(
     return draw_items
 
 
-@router.get("/draws/{draw_id}", response_model=DrawDetailResponse)
+@router.get("/draws/{invite_code}", response_model=DrawDetailResponse)
 async def get_draw_detail(
-    draw_id: int,
+    invite_code: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -376,7 +376,7 @@ async def get_draw_detail(
     - Organizer can see all participant details
     
     Parameters:
-    - draw_id: int - The draw ID
+    - invite_code: str - The draw invite code
     - db: Session - Database session dependency
     - current_user: User - Currently authenticated user
     
@@ -387,7 +387,7 @@ async def get_draw_detail(
     - HTTPException 404: If draw not found
     - HTTPException 403: If user is not the organizer
     """
-    draw = db.query(Draw).filter(Draw.id == draw_id).first()
+    draw = db.query(Draw).filter(Draw.invite_code == invite_code).first()
     
     if not draw:
         raise HTTPException(
@@ -402,7 +402,7 @@ async def get_draw_detail(
         )
     
     participants = db.query(Participant).filter(
-        Participant.draw_id == draw_id
+        Participant.draw_id == draw.id
     ).all()
     
     participant_details = [

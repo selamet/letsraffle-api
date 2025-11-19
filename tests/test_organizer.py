@@ -38,7 +38,7 @@ class TestGetDrawDetail:
         
         # Get details
         response = client.get(
-            f"/api/v1/draws/{draw_id}",
+            f"/api/v1/draws/{invite_code}",
             headers=auth_headers
         )
         
@@ -70,10 +70,11 @@ class TestGetDrawDetail:
         )
         
         draw_id = create_response.json()["drawId"]
+        invite_code = create_response.json()["inviteCode"]
         
         # User 2 tries to access
         response = client.get(
-            f"/api/v1/draws/{draw_id}",
+            f"/api/v1/draws/{invite_code}",
             headers=second_auth_headers
         )
         
@@ -98,16 +99,17 @@ class TestGetDrawDetail:
         )
         
         draw_id = create_response.json()["drawId"]
+        invite_code = create_response.json()["inviteCode"]
         
         # Try without auth
-        response = client.get(f"/api/v1/draws/{draw_id}")
+        response = client.get(f"/api/v1/draws/{invite_code}")
         
         assert response.status_code == 401
     
     def test_get_draw_detail_not_found(self, client, auth_headers):
         """Test getting non-existent draw"""
         response = client.get(
-            "/api/v1/draws/99999",
+            "/api/v1/draws/non-existent-code",
             headers=auth_headers
         )
         
@@ -176,9 +178,10 @@ class TestDeleteParticipant:
         )
         
         draw_id = create_response.json()["drawId"]
+        invite_code = create_response.json()["inviteCode"]
         
         # Get organizer ID (first participant)
-        detail_response = client.get(f"/api/v1/draws/{draw_id}", headers=auth_headers)
+        detail_response = client.get(f"/api/v1/draws/{invite_code}", headers=auth_headers)
         organizer_id = detail_response.json()["participants"][0]["id"]
         
         # Try to delete organizer
