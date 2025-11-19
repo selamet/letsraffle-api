@@ -182,6 +182,19 @@ class ParticipantDetail(BaseModel):
     created_at: datetime = Field(..., alias="createdAt")
 
 
+class DrawListItem(BaseModel):
+    """Schema for draw list item with camelCase support"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: int
+    draw_type: str = Field(..., alias="drawType")
+    status: str
+    invite_code: Optional[str] = Field(None, alias="inviteCode")
+    participant_count: int = Field(..., alias="participantCount")
+    created_at: datetime = Field(..., alias="createdAt")
+    draw_date: Optional[datetime] = Field(None, alias="drawDate")
+
+
 class DrawDetailResponse(BaseModel):
     """Schema for draw detail (organizer only) with camelCase support"""
     model_config = ConfigDict(populate_by_name=True)

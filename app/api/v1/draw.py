@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, List
 from app.models import get_db, User
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_user_optional, get_current_user
@@ -7,7 +7,8 @@ from app.schemas.draw import (
     ManualDrawCreate, ManualDrawResponse,
     DynamicDrawCreate, DynamicDrawResponse,
     DrawPublicInfo, ParticipantJoinRequest,
-    DrawDetailResponse, ParticipantDetail, UpdateDrawSchedule
+    DrawDetailResponse, ParticipantDetail, UpdateDrawSchedule,
+    DrawListItem
 )
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.draw import Draw, DrawStatus, DrawType, Participant
@@ -306,6 +307,56 @@ async def join_draw(
 
 
 # Organizer Draw Management Endpoints
+
+@router.get("/draws", response_model=List[DrawListItem])
+async def get_draws_list(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get list of draws created by the authenticated user.
+    
+    - **Authentication Required:** Only authenticated users can access
+    - Returns all draws created by the current user
+    - Draws are sorted by creation date (newest first)
+    - Includes participant count for each draw
+    
+    Parameters:
+    - db: Session - Database session dependency
+    - current_user: User - Currently authenticated user
+    
+    Returns:
+    - List[DrawListItem]: List of draws created by the user
+    """
+    draws = (
+        db.query(Draw)
+        .filter(Draw.creator_id == current_user.id)
+        .order_by(Draw.created_at.desc())
+        .all()
+    )
+    
+    draw_items = []
+    for draw in draws:
+        participant_count = db.query(Participant).filter(
+            Participant.draw_id == draw.id
+        ).count()
+        
+        draw_items.append(
+            DrawListItem(
+                id=draw.id,
+                draw_type=draw.draw_type,
+                status=draw.status,
+                invite_code=draw.invite_code,
+                participant_count=participant_count,
+                created_at=draw.created_at,
+                draw_date=draw.draw_date
+            )
+        )
+    
+    logger.info(f"Draw list retrieved: user_id={current_user.id}, count={len(draw_items)}")
+    
+    return draw_items
+
 
 @router.get("/draws/{draw_id}", response_model=DrawDetailResponse)
 async def get_draw_detail(
