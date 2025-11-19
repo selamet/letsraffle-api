@@ -22,12 +22,21 @@ class ManualDrawCreate(BaseModel):
 
     address_required: bool = Field(False, alias="addressRequired")
     phone_number_required: bool = Field(False, alias="phoneNumberRequired")
+    language: str = Field("TR", alias="language", description="Language code (TR or EN)")
     participants: List[ManualDrawParticipant] = Field(
         ...,
         min_length=3,
         description="List of participants (minimum 3 required)"
     )
 
+    @field_validator('language')
+    @classmethod
+    def validate_language(cls, v: str) -> str:
+        """Validate that language is either TR or EN"""
+        if v.upper() not in ['TR', 'EN']:
+            raise ValueError("language must be either 'TR' or 'EN'")
+        return v.upper()
+    
     @model_validator(mode='after')
     def validate_required_fields(self):
         """Validate that required fields are present in all participants"""
@@ -78,6 +87,7 @@ class DynamicDrawCreate(BaseModel):
 
     address_required: bool = Field(False, alias="addressRequired")
     phone_number_required: bool = Field(False, alias="phoneNumberRequired")
+    language: str = Field("TR", alias="language", description="Language code (TR or EN)")
     draw_date: Optional[datetime] = Field(None, alias="drawDate")
     participants: List[DynamicDrawParticipant] = Field(
         ...,
@@ -86,6 +96,14 @@ class DynamicDrawCreate(BaseModel):
         description="List with exactly 1 participant (the organizer)"
     )
 
+    @field_validator('language')
+    @classmethod
+    def validate_language(cls, v: str) -> str:
+        """Validate that language is either TR or EN"""
+        if v.upper() not in ['TR', 'EN']:
+            raise ValueError("language must be either 'TR' or 'EN'")
+        return v.upper()
+    
     @field_validator('draw_date')
     @classmethod
     def validate_draw_date(cls, v: Optional[datetime]) -> Optional[datetime]:
@@ -165,6 +183,7 @@ class DrawPublicInfo(BaseModel):
     draw_date: Optional[datetime] = Field(None, alias="drawDate")
     status: str
     participant_count: int = Field(..., alias="participantCount")
+    language: str = Field(..., alias="language")
 
 
 # Organizer Draw Management Schemas
@@ -193,6 +212,7 @@ class DrawListItem(BaseModel):
     participant_count: int = Field(..., alias="participantCount")
     created_at: datetime = Field(..., alias="createdAt")
     draw_date: Optional[datetime] = Field(None, alias="drawDate")
+    language: str = Field(..., alias="language")
 
 
 class DrawDetailResponse(BaseModel):
@@ -207,6 +227,7 @@ class DrawDetailResponse(BaseModel):
     require_phone: bool = Field(..., alias="requirePhone")
     draw_date: Optional[datetime] = Field(None, alias="drawDate")
     created_at: datetime = Field(..., alias="createdAt")
+    language: str = Field(..., alias="language")
     participants: List[ParticipantDetail]
 
 

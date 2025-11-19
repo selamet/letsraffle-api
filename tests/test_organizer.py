@@ -48,6 +48,8 @@ class TestGetDrawDetail:
         assert data["drawType"] == "dynamic"
         assert data["status"] == "active"
         assert data["inviteCode"] == invite_code
+        assert "language" in data
+        assert data["language"] in ["TR", "EN"]
         assert len(data["participants"]) == 2
     
     def test_get_draw_detail_non_organizer(self, client, auth_headers, second_auth_headers):

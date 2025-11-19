@@ -11,7 +11,7 @@ from app.schemas.draw import (
     DrawListItem
 )
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.models.draw import Draw, DrawStatus, DrawType, Participant
+from app.models.draw import Draw, DrawStatus, DrawType, Participant, Language
 from app.utils.link_generator import generate_invite_code
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,8 @@ async def create_manual_draw(
             status=DrawStatus.IN_PROGRESS.value,
             require_address=draw_data.address_required,
             require_phone=draw_data.phone_number_required,
-            draw_date=None
+            draw_date=None,
+            language=draw_data.language
         )
         db.add(new_draw)
         db.flush()
@@ -120,7 +121,8 @@ async def create_dynamic_draw(
             require_address=draw_data.address_required,
             require_phone=draw_data.phone_number_required,
             draw_date=draw_data.draw_date,
-            invite_code=invite_code
+            invite_code=invite_code,
+            language=draw_data.language
         )
         db.add(new_draw)
         db.flush()
@@ -198,7 +200,8 @@ async def get_draw_public_info(
         require_phone=draw.require_phone,
         draw_date=draw.draw_date,
         status=draw.status,
-        participant_count=participant_count
+        participant_count=participant_count,
+        language=draw.language
     )
 
 
@@ -349,7 +352,8 @@ async def get_draws_list(
                 invite_code=draw.invite_code,
                 participant_count=participant_count,
                 created_at=draw.created_at,
-                draw_date=draw.draw_date
+                draw_date=draw.draw_date,
+                language=draw.language
             )
         )
     
@@ -423,6 +427,7 @@ async def get_draw_detail(
         require_phone=draw.require_phone,
         draw_date=draw.draw_date,
         created_at=draw.created_at,
+        language=draw.language,
         participants=participant_details
     )
 

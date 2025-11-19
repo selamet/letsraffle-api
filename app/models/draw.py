@@ -18,6 +18,11 @@ class DrawStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
+class Language(str, Enum):
+    TR = "TR"
+    EN = "EN"
+
+
 class Draw(BaseModel):
     """Draw a model representing a gift exchange event."""
 
@@ -32,6 +37,7 @@ class Draw(BaseModel):
     require_address = Column(Boolean(False), default=False)
     require_phone = Column(Boolean(False), default=False)
     invite_code = Column(String(255), unique=True, nullable=True, index=True)
+    language = Column(String(2), default=Language.TR.value, nullable=False)
 
     participants = relationship("Participant", back_populates="draw", cascade="all, delete-orphan")
 
