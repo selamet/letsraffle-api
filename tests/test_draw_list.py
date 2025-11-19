@@ -65,9 +65,11 @@ class TestDrawList:
             assert "status" in draw
             assert "participantCount" in draw
             assert "createdAt" in draw
+            assert "language" in draw
             assert draw["drawType"] in ["manual", "dynamic"]
             assert draw["status"] in ["active", "in_progress", "completed", "cancelled"]
             assert isinstance(draw["participantCount"], int)
+            assert draw["language"] in ["TR", "EN"]
     
     def test_get_draws_list_empty(self, client, auth_headers):
         """Test user with no draws gets empty list"""

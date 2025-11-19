@@ -3,7 +3,7 @@ Manual draw endpoint tests
 """
 
 import pytest
-from app.models.draw import Draw, DrawType, DrawStatus
+from app.models.draw import Draw, DrawType, DrawStatus, Language
 
 
 @pytest.mark.manual_draw
@@ -37,6 +37,7 @@ class TestManualDraw:
         assert draw.draw_type == DrawType.MANUAL.value
         assert draw.status == DrawStatus.IN_PROGRESS.value
         assert len(draw.participants) == 3
+        assert draw.language == Language.TR.value  # Default language
     
     def test_create_manual_draw_anonymous(self, client, test_db):
         """Test creating manual draw without authentication"""
@@ -146,4 +147,65 @@ class TestManualDraw:
         )
         
         assert response.status_code == 422
+    
+    def test_create_manual_draw_with_language_tr(self, client, auth_headers, test_db):
+        """Test creating manual draw with TR language"""
+        response = client.post(
+            "/api/v1/draws/manual",
+            headers=auth_headers,
+            json={
+                "addressRequired": False,
+                "phoneNumberRequired": False,
+                "language": "TR",
+                "participants": [
+                    {"firstName": "Alice", "lastName": "Smith", "email": "alice@example.com"},
+                    {"firstName": "Bob", "lastName": "Jones", "email": "bob@example.com"},
+                    {"firstName": "Carol", "lastName": "White", "email": "carol@example.com"}
+                ]
+            }
+        )
+        
+        assert response.status_code == 201
+        draw = test_db.query(Draw).filter(Draw.id == response.json()["drawId"]).first()
+        assert draw.language == Language.TR.value
+    
+    def test_create_manual_draw_with_language_en(self, client, auth_headers, test_db):
+        """Test creating manual draw with EN language"""
+        response = client.post(
+            "/api/v1/draws/manual",
+            headers=auth_headers,
+            json={
+                "addressRequired": False,
+                "phoneNumberRequired": False,
+                "language": "EN",
+                "participants": [
+                    {"firstName": "Alice", "lastName": "Smith", "email": "alice@example.com"},
+                    {"firstName": "Bob", "lastName": "Jones", "email": "bob@example.com"},
+                    {"firstName": "Carol", "lastName": "White", "email": "carol@example.com"}
+                ]
+            }
+        )
+        
+        assert response.status_code == 201
+        draw = test_db.query(Draw).filter(Draw.id == response.json()["drawId"]).first()
+        assert draw.language == Language.EN.value
+    
+    def test_create_manual_draw_invalid_language(self, client):
+        """Test validation with invalid language"""
+        response = client.post(
+            "/api/v1/draws/manual",
+            json={
+                "addressRequired": False,
+                "phoneNumberRequired": False,
+                "language": "FR",
+                "participants": [
+                    {"firstName": "Alice", "lastName": "Smith", "email": "alice@example.com"},
+                    {"firstName": "Bob", "lastName": "Jones", "email": "bob@example.com"},
+                    {"firstName": "Carol", "lastName": "White", "email": "carol@example.com"}
+                ]
+            }
+        )
+        
+        assert response.status_code == 422
+        assert "language must be either 'TR' or 'EN'" in str(response.json())
 

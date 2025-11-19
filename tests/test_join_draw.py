@@ -40,6 +40,8 @@ class TestDrawPublicInfo:
         assert data["requirePhone"] is False
         assert data["status"] == "active"
         assert data["participantCount"] == 1
+        assert "language" in data
+        assert data["language"] in ["TR", "EN"]
     
     def test_get_public_info_invalid_code(self, client):
         """Test getting public info with invalid invite code"""
