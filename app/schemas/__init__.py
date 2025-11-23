@@ -5,11 +5,13 @@ Schemas module
 from app.schemas.user import (
     UserCreate,
     UserLogin,
-    TokenResponse
+    TokenResponse,
+    RefreshTokenRequest
 )
 
 __all__ = [
     "UserCreate",
     "UserLogin",
-    "TokenResponse"
+    "TokenResponse",
+    "RefreshTokenRequest"
 ]
