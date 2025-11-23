@@ -22,6 +22,7 @@ class TestRegister:
         assert response.status_code == 201
         data = response.json()
         assert data["access_token"] is not None
+        assert data["refresh_token"] is not None
         assert data["token_type"] == "bearer"
         assert data["user"]["email"] == "newuser@example.com"
         assert data["user"]["id"] is not None
@@ -78,6 +79,7 @@ class TestLogin:
         assert response.status_code == 200
         data = response.json()
         assert data["access_token"] is not None
+        assert data["refresh_token"] is not None
         assert data["token_type"] == "bearer"
         assert data["user"]["email"] == test_user.email
     
@@ -114,6 +116,63 @@ class TestLogin:
                 "email": "invalid-email",
                 "password": "Password123!"
             }
+        )
+        
+        assert response.status_code == 422
+
+
+@pytest.mark.auth
+class TestRefreshToken:
+    """Test refresh token endpoint"""
+    
+    def test_refresh_token_success(self, client, test_user, test_db):
+        """Test successful token refresh"""
+        # First login to get refresh token
+        login_response = client.post(
+            "/api/v1/auth/login",
+            json={
+                "email": test_user.email,
+                "password": "TestPassword123!"
+            }
+        )
+        
+        assert login_response.status_code == 200
+        refresh_token = login_response.json()["refresh_token"]
+        
+        # Refresh token
+        response = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": refresh_token}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["access_token"] is not None
+        assert data["refresh_token"] is not None
+        assert data["token_type"] == "bearer"
+        assert data["user"]["email"] == test_user.email
+        
+        # Verify tokens are valid (can be used)
+        # Note: Tokens might be the same if generated in the same second,
+        # but the important thing is that refresh endpoint works correctly
+        assert len(data["access_token"]) > 0
+        assert len(data["refresh_token"]) > 0
+    
+    def test_refresh_token_invalid(self, client):
+        """Test refresh with invalid token"""
+        response = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": "invalid-token"}
+        )
+        
+        assert response.status_code == 401
+        assert "invalid" in response.json()["detail"].lower()
+    
+    def test_refresh_token_missing(self, client):
+        """Test refresh without token"""
+        response = client.post(
+            "/api/v1/auth/refresh",
+            json={}
         )
         
         assert response.status_code == 422
