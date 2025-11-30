@@ -49,6 +49,7 @@ websockets==15.0.1
 celery==5.5.3
 redis==5.2.1
 flower==2.0.1
+boto3==1.35.0
 
 # Testing
 pytest==7.4.3
