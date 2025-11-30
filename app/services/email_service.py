@@ -119,7 +119,6 @@ class EmailService:
                     'Body': {'Html': {'Data': body_html, 'Charset': 'UTF-8'}}
                 }
             )
-            print(response)
             logger.info(
                 f"Email sent successfully to {giver.email} for draw {draw.id}. "
                 f"MessageId: {response['MessageId']}"
