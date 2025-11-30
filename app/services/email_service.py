@@ -113,7 +113,7 @@ class EmailService:
             
             response = self.ses_client.send_email(
                 Source=self.from_email,
-                Destination={'ToAddresses': ["hey@letsraffle.co"]},
+                Destination={'ToAddresses': [giver.email]},
                 Message={
                     'Subject': {'Data': config['subject'], 'Charset': 'UTF-8'},
                     'Body': {'Html': {'Data': body_html, 'Charset': 'UTF-8'}}
