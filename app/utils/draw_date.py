@@ -19,18 +19,22 @@ def normalize_and_validate_draw_date(
     """
     Normalize draw_date timezone and validate for database storage.
     
-    Important: Server runs in UTC, but user-submitted dates without timezone
-    are interpreted as Europe/Istanbul (Turkey local time) since users are in Turkey.
+    Important: Server runs in UTC. User-submitted dates without timezone are interpreted
+    based on draw language:
+    - TR draw: Treat as Europe/Istanbul (Turkey local time), then convert to UTC
+    - EN draw: Treat as UTC (server timezone), no conversion needed
     
     Process:
-    - If timezone-aware is None: Treat as Europe/Istanbul, then convert to UTC
+    - If timezone-aware is None: Assign timezone based on language (TR→Europe/Istanbul, EN→UTC)
     - If timezone-aware is set: Use as-is, then convert to UTC
     - Always returns UTC datetime for database storage (server timezone)
     - Validates that date is in future (UTC), same year (UTC), and exact hour
     
     Args:
         draw_date: Datetime to normalize and validate (can be None)
-        language: Language code ('TR' or 'EN') - both treat timezone-naive as Europe/Istanbul
+        language: Language code ('TR' or 'EN')
+                   - TR: timezone-naive dates treated as Europe/Istanbul
+                   - EN: timezone-naive dates treated as UTC
         
     Returns:
         UTC datetime ready for database storage, or None
@@ -43,9 +47,16 @@ def normalize_and_validate_draw_date(
     
     now = datetime.now(timezone.utc)
     
+    # If timezone-aware is None, assign timezone based on language
     if draw_date.tzinfo is None:
-        draw_date = draw_date.replace(tzinfo=ZoneInfo("Europe/Istanbul"))
+        if language.upper() == 'TR':
+            # TR draw: Treat as Europe/Istanbul (Turkey local time)
+            draw_date = draw_date.replace(tzinfo=ZoneInfo("Europe/Istanbul"))
+        else:
+            # EN draw: Treat as UTC (server timezone)
+            draw_date = draw_date.replace(tzinfo=timezone.utc)
     
+    # Convert to UTC (database stores in UTC)
     draw_date = draw_date.astimezone(timezone.utc)
     
     if draw_date <= now:
