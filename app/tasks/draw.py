@@ -5,13 +5,15 @@ Handles asynchronous draw processing.
 """
 
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 from app.celery_app import app
 from app.models.database import SessionLocal
 from app.services.draw_service import DrawService
 from app.services.email_service import EmailService
-from app.models.draw import Draw
+from app.models.draw import Draw, DrawStatus, Language, Participant
 from app.core.exceptions import (
     DrawServiceException,
     InsufficientParticipantsError,
@@ -23,14 +25,91 @@ logger = logging.getLogger(__name__)
 
 
 @app.task(bind=True, name='execute_scheduled_draw_task')
-def execute_scheduled_draw_task(self):
+def execute_scheduled_draw_task(self) -> Dict[str, Any]:
     """
-    Execute scheduled draws (runs periodically via Celery Beat)
-    
-    TODO: Implement automatic execution of draws when their scheduled time arrives
+    Execute scheduled draws (runs periodically via Celery Beat every hour).
+
+    Finds draws that have a scheduled draw_date that has arrived and are ready to be executed.
+    Processes each draw asynchronously. Log messages are based on draw language (TR/EN).
+
+    Note: draw_date is already stored in UTC in the database, so we compare directly with UTC.
+
+    Returns:
+        Dict with status, message, and execution details
     """
-    logger.info('execute_scheduled_draw_task')
-    return {"status": "success", "message": "Test task completed"}
+    db = SessionLocal()
+
+    try:
+        now = datetime.now(timezone.utc)
+
+        scheduled_draws = db.query(Draw).filter(
+            and_(
+                Draw.draw_date.isnot(None),
+                Draw.draw_date <= now,
+                Draw.status.in_([DrawStatus.ACTIVE.value, DrawStatus.IN_PROGRESS.value])
+            )
+        ).all()
+
+        if not scheduled_draws:
+            db.close()
+            return {
+                "status": "success",
+                "message": "No scheduled draws to execute",
+                "draws_processed": 0
+            }
+
+        processed_draws = []
+        skipped_draws = []
+
+        for draw in scheduled_draws:
+            participant_count = db.query(Participant).filter(
+                Participant.draw_id == draw.id
+            ).count()
+
+            if participant_count < 3:
+                skipped_draws.append({
+                    "draw_id": draw.id,
+                    "reason": "insufficient_participants",
+                    "participant_count": participant_count
+                })
+                continue
+
+            draw.status = DrawStatus.IN_PROGRESS.value
+            db.commit()
+
+            process_draw.delay(draw.id)
+
+            processed_draws.append({
+                "draw_id": draw.id,
+                "draw_date": draw.draw_date.isoformat() if draw.draw_date else None,
+                "language": draw.language
+            })
+
+        logger.info(
+            f"execute_scheduled_draw_task: time={now.isoformat()}, "
+            f"processed={len(processed_draws)}, "
+            f"skipped={len(skipped_draws)}, "
+            f"draw_ids={[d['draw_id'] for d in processed_draws]}"
+        )
+
+        return {
+            "status": "success",
+            "message": f"Processed {len(processed_draws)} draws, skipped {len(skipped_draws)}",
+            "draws_processed": len(processed_draws),
+            "draws_skipped": len(skipped_draws),
+            "processed_draws": processed_draws,
+            "skipped_draws": skipped_draws
+        }
+
+    except Exception as e:
+        logger.error(f'Unexpected error in execute_scheduled_draw_task: {str(e)}', exc_info=True)
+        return {
+            "status": "error",
+            "message": f"Error executing scheduled draws: {str(e)}",
+            "draws_processed": 0
+        }
+    finally:
+        db.close()
 
 
 @app.task(bind=True, name='process_draw')
