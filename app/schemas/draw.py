@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator, ConfigDict
+from app.utils.draw_date import normalize_and_validate_draw_date
 
 
 # Manual Draw Schemas
@@ -103,36 +104,17 @@ class DynamicDrawCreate(BaseModel):
         if v.upper() not in ['TR', 'EN']:
             raise ValueError("language must be either 'TR' or 'EN'")
         return v.upper()
-    
-    @field_validator('draw_date')
-    @classmethod
-    def validate_draw_date(cls, v: Optional[datetime]) -> Optional[datetime]:
-        """Validate that draw_date is in the future and at exact hour (minutes must be :00)"""
-        if v is not None:
-            from datetime import timezone as tz
-            now = datetime.now(tz.utc)
-            
-            # Ensure timezone aware
-            if v.tzinfo is None:
-                v = v.replace(tzinfo=tz.utc)
-            
-            # Check if in the future
-            if v <= now:
-                raise ValueError("drawDate must be in the future")
-            
-            # Check if in the same year
-            if v.year != now.year:
-                raise ValueError(f"drawDate must be in the current year ({now.year})")
-            
-            # Check if minutes are :00
-            if v.minute != 0 or v.second != 0:
-                raise ValueError("drawDate must be at exact hour (e.g., 13:00, not 13:33)")
-        
-        return v
 
     @model_validator(mode='after')
-    def validate_organizer_required_fields(self):
-        """Validate that organizer has required fields"""
+    def validate_draw_date_and_organizer_required_fields(self):
+        """
+        Validate draw_date timezone handling and organizer required fields.
+        
+        Uses utility function to normalize timezone based on language.
+        """
+        if self.draw_date is not None:
+            self.draw_date = normalize_and_validate_draw_date(self.draw_date, self.language)
+        
         organizer = self.participants[0]
         
         if self.address_required:
@@ -232,30 +214,12 @@ class DrawDetailResponse(BaseModel):
 
 
 class UpdateDrawSchedule(BaseModel):
-    """Schema for updating draw schedule with camelCase support"""
+    """
+    Schema for updating draw schedule with camelCase support.
+    
+    Note: Timezone normalization is handled in the API endpoint
+    because this schema doesn't have access to the draw's language.
+    """
     model_config = ConfigDict(populate_by_name=True)
 
     draw_date: Optional[datetime] = Field(None, alias="drawDate")
-
-    @field_validator('draw_date')
-    @classmethod
-    def validate_draw_date(cls, v: Optional[datetime]) -> Optional[datetime]:
-        """Validate that draw_date is in the future and at exact hour"""
-        if v is not None:
-            from datetime import timezone as tz
-            now = datetime.now(tz.utc)
-            
-            if v.tzinfo is None:
-                v = v.replace(tzinfo=tz.utc)
-            
-            if v <= now:
-                raise ValueError("drawDate must be in the future")
-            
-            # Check if in the same year
-            if v.year != now.year:
-                raise ValueError(f"drawDate must be in the current year ({now.year})")
-            
-            if v.minute != 0 or v.second != 0:
-                raise ValueError("drawDate must be at exact hour (e.g., 13:00, not 13:33)")
-        
-        return v

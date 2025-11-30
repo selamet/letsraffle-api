@@ -13,6 +13,7 @@ from app.schemas.draw import (
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.draw import Draw, DrawStatus, DrawType, Participant, Language
 from app.utils.link_generator import generate_invite_code
+from app.utils.draw_date import normalize_and_validate_draw_date
 
 logger = logging.getLogger(__name__)
 
@@ -556,7 +557,17 @@ async def update_draw_schedule(
             detail="Cannot update schedule of a completed draw"
         )
     
-    draw.draw_date = schedule_data.draw_date
+    try:
+        draw.draw_date = normalize_and_validate_draw_date(
+            schedule_data.draw_date,
+            draw.language
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    
     db.commit()
     
     logger.info(
