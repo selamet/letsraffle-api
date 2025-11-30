@@ -66,8 +66,8 @@ async def create_manual_draw(
         db.bulk_save_objects(participants_data)
         db.commit()
 
-        # from app.tasks.draw import process_manual_draw_task
-        # process_manual_draw_task.delay(new_draw.id)
+        from app.tasks.draw import process_draw
+        process_draw.delay(new_draw.id)
 
         logger.info(f"Manual draw created: draw_id={new_draw.id}, creator_id={new_draw.creator_id}")
 
@@ -628,13 +628,11 @@ async def execute_draw(
             detail=f"Minimum 3 participants required. Current: {participant_count}"
         )
     
-    # Update status to IN_PROGRESS
     draw.status = DrawStatus.IN_PROGRESS.value
     db.commit()
     
-    # Trigger Celery task
-    from app.tasks.draw import process_manual_draw_task
-    process_manual_draw_task.delay(draw_id)
+    from app.tasks.draw import process_draw
+    process_draw.delay(draw_id)
     
     logger.info(
         f"Draw execution triggered: draw_id={draw_id}, by_user={current_user.id}"

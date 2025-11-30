@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     # Sentry Configuration (Optional - only DSN from .env)
     sentry_dsn: Optional[str] = None
     
+    # AWS SES Configuration
+    aws_region: str = "us-east-1"
+    aws_access_key_id: Optional[str] = None
+    aws_secret_access_key: Optional[str] = None
+    ses_from_email: str = "noreply@example.com"
+    
     @property
     def database_url(self) -> str:
         """Generate database URL from PostgreSQL connection details"""
