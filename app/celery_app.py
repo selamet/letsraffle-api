@@ -55,6 +55,7 @@ app.autodiscover_tasks(['app.tasks'])
 
 try:
     from app.tasks import draw
+    from app.tasks import email_tasks
 except ImportError as e:
     pass
 

@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     
     # CORS Settings
     cors_origins: List[str] = ["*"]
+    frontend_url: str = "http://localhost:5173"
     
     # PostgreSQL Connection Details
     postgres_host: str = "localhost"

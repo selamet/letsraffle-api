@@ -6,12 +6,16 @@ from app.schemas.user import (
     UserCreate,
     UserLogin,
     TokenResponse,
-    RefreshTokenRequest
+    RefreshTokenRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest
 )
 
 __all__ = [
     "UserCreate",
     "UserLogin",
     "TokenResponse",
-    "RefreshTokenRequest"
+    "RefreshTokenRequest",
+    "ForgotPasswordRequest",
+    "ResetPasswordRequest"
 ]

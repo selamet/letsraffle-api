@@ -31,6 +31,14 @@ class EmailService:
             'template': 'email-template-tr.html',
             'subject': '🎄 Yılbaşı Çekiliş Sonucu',
             'not_provided': 'Belirtilmemiş'
+        },
+        'reset_password_en': {
+            'template': 'reset-password-template-en.html',
+            'subject': 'Password Reset Request'
+        },
+        'reset_password_tr': {
+            'template': 'reset-password-template-tr.html',
+            'subject': 'Şifre Sıfırlama Talebi'
         }
     }
     
@@ -210,4 +218,54 @@ class EmailService:
             f"Email sending completed for draw {draw_id}: "
             f"{successful_count}/{total_count} emails sent successfully"
         )
+
+    def send_password_reset_email(self, email: str, token: str, language: str = Language.TR.value) -> bool:
+        """
+        Send password reset email to user
+        
+        Args:
+            email: User's email address
+            token: Reset token
+            language: Language code (default: tr)
+            
+        Returns:
+            True if email sent successfully, False otherwise
+        """
+        try:
+            # Determine config based on language (case-insensitive)
+            lang_upper = language.upper()
+            config_key = 'reset_password_tr' if lang_upper == 'TR' else 'reset_password_en'
+            config = self.TEMPLATE_CONFIG.get(config_key, self.TEMPLATE_CONFIG['reset_password_tr'])
+            
+            template = self.jinja_env.get_template(config['template'])
+            
+            # Create reset link
+            reset_link = f"{settings.frontend_url}/reset-password?token={token}"
+            
+            context = {
+                'reset_link': reset_link
+            }
+            
+            body_html = template.render(**context)
+            
+            response = self.ses_client.send_email(
+                Source=self.from_email,
+                Destination={'ToAddresses': [email]},
+                Message={
+                    'Subject': {'Data': config['subject'], 'Charset': 'UTF-8'},
+                    'Body': {'Html': {'Data': body_html, 'Charset': 'UTF-8'}}
+                }
+            )
+            
+            logger.info(f"Password reset email sent to {email}. MessageId: {response['MessageId']}")
+            return True
+            
+        except ClientError as e:
+            error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+            error_message = e.response.get('Error', {}).get('Message', str(e))
+            logger.error(f"Failed to send password reset email to {email}: {error_code} - {error_message}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error sending password reset email to {email}: {e}", exc_info=True)
+            return False
 
