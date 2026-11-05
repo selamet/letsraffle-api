@@ -166,6 +166,11 @@ class DrawPublicInfo(BaseModel):
     status: str
     participant_count: int = Field(..., alias="participantCount")
     language: str = Field(..., alias="language")
+    organizer_name: Optional[str] = Field(
+        None,
+        alias="organizerName",
+        description="Organizer first name and last-name initial, e.g. 'Ayşe D.'",
+    )
 
 
 # Organizer Draw Management Schemas
