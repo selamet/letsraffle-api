@@ -5,7 +5,14 @@ Authentication endpoints
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.models import get_db, User
-from app.schemas import UserCreate, UserLogin, TokenResponse, RefreshTokenRequest, ForgotPasswordRequest, ResetPasswordRequest
+from app.schemas import (
+    UserCreate, UserLogin, TokenResponse, RefreshTokenRequest, ForgotPasswordRequest,
+    ResetPasswordRequest, AppleSignInRequest
+)
+from app.api.deps import get_current_user
+from app.core import apple
+from app.schemas.user import UserResponse
+from app.models.draw import Draw
 from app.core.security import create_access_token, create_refresh_token, decode_refresh_token, decode_access_token
 from app.tasks.email_tasks import send_password_reset_email_task
 from datetime import timedelta
@@ -208,3 +215,72 @@ async def reset_password(
     db.commit()
     
     return {"message": "Password has been reset successfully"}
+
+
+def _token_response(user: User) -> dict:
+    return {
+        "access_token": create_access_token(data={"sub": user.email}),
+        "refresh_token": create_refresh_token(data={"sub": user.email}),
+        "token_type": "bearer",
+        "user": user
+    }
+
+
+@router.post("/apple", response_model=TokenResponse)
+async def sign_in_with_apple(request: AppleSignInRequest, db: Session = Depends(get_db)):
+    """
+    Sign in (or sign up) with an Apple identity token.
+
+    - Existing Apple user (same `sub`) → signs in
+    - Existing email/password user with the same email → links Apple to that account
+    - Otherwise a new password-less account is created
+    """
+    try:
+        identity = apple.verify_identity_token(request.identity_token)
+    except apple.AppleTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Apple identity token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user = db.query(User).filter(User.apple_sub == identity.sub).first()
+
+    if not user and identity.email:
+        email = identity.email.lower()
+        user = db.query(User).filter(User.email == email).first()
+        if user:
+            user.apple_sub = identity.sub
+        else:
+            user = User(email=email, password=None, apple_sub=identity.sub)
+            db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apple account has no email. Please share your email on first sign in."
+        )
+
+    return _token_response(user)
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_me(current_user: User = Depends(get_current_user)):
+    """Return the authenticated user"""
+    return current_user
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Permanently delete the authenticated account.
+
+    Draws created by the user are kept for their participants but detached from the account.
+    """
+    db.query(Draw).filter(Draw.creator_id == current_user.id).update(
+        {Draw.creator_id: None}, synchronize_session=False
+    )
+    db.delete(current_user)
+    db.commit()

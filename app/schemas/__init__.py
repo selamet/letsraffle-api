@@ -8,7 +8,8 @@ from app.schemas.user import (
     TokenResponse,
     RefreshTokenRequest,
     ForgotPasswordRequest,
-    ResetPasswordRequest
+    ResetPasswordRequest,
+    AppleSignInRequest
 )
 
 __all__ = [
@@ -17,5 +18,6 @@ __all__ = [
     "TokenResponse",
     "RefreshTokenRequest",
     "ForgotPasswordRequest",
-    "ResetPasswordRequest"
+    "ResetPasswordRequest",
+    "AppleSignInRequest"
 ]
