@@ -38,6 +38,8 @@ class Draw(BaseModel):
     require_phone = Column(Boolean(False), default=False)
     invite_code = Column(String(255), unique=True, nullable=True, index=True)
     language = Column(String(2), default=Language.TR.value, nullable=False)
+    # Set once the "draw is tomorrow" push has been sent.
+    reminder_sent_at = Column(DateTime(timezone=True), nullable=True)
 
     participants = relationship("Participant", back_populates="draw", cascade="all, delete-orphan")
 
