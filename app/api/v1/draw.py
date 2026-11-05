@@ -15,6 +15,9 @@ from app.models.draw import Draw, DrawStatus, DrawType, Participant, Language
 from app.utils.link_generator import generate_invite_code
 from app.utils.draw_date import normalize_and_validate_draw_date
 from app.utils.names import public_display_name
+from app.core.security import create_participant_token
+from app.services.match_service import build_match_result
+from app.schemas.draw import MatchResult
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +143,7 @@ async def create_dynamic_draw(
         )
         db.add(organizer_participant)
         db.commit()
+        db.refresh(organizer_participant)
         
         logger.info(
             f"Dynamic draw created: draw_id={new_draw.id}, "
@@ -150,7 +154,8 @@ async def create_dynamic_draw(
             success=True,
             message="Draw created successfully. Share the invite code with participants.",
             draw_id=new_draw.id,
-            invite_code=invite_code
+            invite_code=invite_code,
+            participant_token=create_participant_token(organizer_participant.id, new_draw.id)
         )
         
     except Exception as e:
@@ -308,7 +313,8 @@ async def join_draw(
             "success": True,
             "message": "Successfully joined the draw",
             "participantId": new_participant.id,
-            "drawId": draw.id
+            "drawId": draw.id,
+            "participantToken": create_participant_token(new_participant.id, draw.id)
         }
         
     except Exception as e:
@@ -663,3 +669,32 @@ async def execute_draw(
         "success": True,
         "message": "Draw execution started. Results will be sent via email."
     }
+
+
+@router.get("/draws/{invite_code}/my-result", response_model=MatchResult)
+async def get_my_result_as_organizer(
+    invite_code: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Return the authenticated organizer's own match in a draw they created.
+
+    The organizer takes part in dynamic draws with their own email; their
+    participant record is found by matching the account email.
+    """
+    draw = db.query(Draw).filter(Draw.invite_code == invite_code).first()
+    if not draw:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Draw not found")
+    if draw.creator_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not authorized to access this draw")
+
+    participant = db.query(Participant).filter(
+        Participant.draw_id == draw.id,
+        Participant.email == current_user.email
+    ).first()
+    if not participant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You are not a participant of this draw")
+
+    return build_match_result(db, draw, participant)
+

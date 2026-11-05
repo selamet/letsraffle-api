@@ -1,3 +1,3 @@
-from app.api.v1 import auth, draw
+from app.api.v1 import auth, draw, participant
 
-__all__ = ["auth", "draw"]
+__all__ = ["auth", "draw", "participant"]
