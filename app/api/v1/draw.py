@@ -304,6 +304,13 @@ async def join_draw(
         db.commit()
         db.refresh(new_participant)
         
+        from app.tasks.push_tasks import enqueue, send_participant_joined_push_task
+        enqueue(
+            send_participant_joined_push_task,
+            draw.id,
+            public_display_name(new_participant.first_name, new_participant.last_name)
+        )
+
         logger.info(
             f"Participant joined draw: draw_id={draw.id}, "
             f"participant_id={new_participant.id}, email={participant_data.email}"
