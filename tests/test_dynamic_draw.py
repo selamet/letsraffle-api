@@ -5,6 +5,7 @@ Dynamic draw endpoint tests
 import pytest
 from datetime import datetime, timezone, timedelta
 from app.models.draw import Draw, DrawType, DrawStatus, Language
+from tests.helpers import future_hour_iso, next_year_iso
 
 
 @pytest.mark.dynamic_draw
@@ -19,7 +20,7 @@ class TestDynamicDrawCreate:
             json={
                 "addressRequired": True,
                 "phoneNumberRequired": True,
-                "drawDate": "2025-12-25T20:00:00Z",
+                "drawDate": future_hour_iso(),
                 "participants": [{
                     "firstName": "Organizer",
                     "lastName": "Test",
@@ -90,7 +91,7 @@ class TestDynamicDrawCreate:
             json={
                 "addressRequired": False,
                 "phoneNumberRequired": False,
-                "drawDate": "2025-12-25T13:33:00Z",
+                "drawDate": future_hour_iso(minute=33),
                 "participants": [{
                     "firstName": "Test",
                     "lastName": "User",
@@ -110,7 +111,7 @@ class TestDynamicDrawCreate:
             json={
                 "addressRequired": False,
                 "phoneNumberRequired": False,
-                "drawDate": "2026-01-15T14:00:00Z",
+                "drawDate": next_year_iso(),
                 "participants": [{
                     "firstName": "Test",
                     "lastName": "User",
