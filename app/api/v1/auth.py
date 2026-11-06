@@ -13,6 +13,7 @@ from app.api.deps import get_current_user
 from app.core import apple
 from app.schemas.user import UserResponse
 from app.models.draw import Draw
+from app.models.device import Device
 from app.core.security import create_access_token, create_refresh_token, decode_refresh_token, decode_access_token
 from app.tasks.email_tasks import send_password_reset_email_task
 from datetime import timedelta
@@ -281,6 +282,9 @@ async def delete_me(current_user: User = Depends(get_current_user), db: Session 
     """
     db.query(Draw).filter(Draw.creator_id == current_user.id).update(
         {Draw.creator_id: None}, synchronize_session=False
+    )
+    db.query(Device).filter(Device.user_id == current_user.id).update(
+        {Device.user_id: None}, synchronize_session=False
     )
     db.delete(current_user)
     db.commit()
