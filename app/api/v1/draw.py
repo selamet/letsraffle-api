@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.draw import Draw, DrawStatus, DrawType, Participant, Language
 from app.utils.link_generator import generate_invite_code
 from app.utils.draw_date import normalize_and_validate_draw_date
+from app.utils.names import public_display_name
 
 logger = logging.getLogger(__name__)
 
@@ -194,6 +195,14 @@ async def get_draw_public_info(
     participant_count = db.query(Participant).filter(
         Participant.draw_id == draw.id
     ).count()
+
+    # The organizer is the first participant of a dynamic draw.
+    organizer = (
+        db.query(Participant)
+        .filter(Participant.draw_id == draw.id)
+        .order_by(Participant.created_at, Participant.id)
+        .first()
+    )
     
     return DrawPublicInfo(
         id=draw.id,
@@ -202,7 +211,8 @@ async def get_draw_public_info(
         draw_date=draw.draw_date,
         status=draw.status,
         participant_count=participant_count,
-        language=draw.language
+        language=draw.language,
+        organizer_name=public_display_name(organizer.first_name, organizer.last_name) if organizer else None
     )
 
 

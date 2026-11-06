@@ -4,6 +4,7 @@ Organizer management endpoint tests
 
 import pytest
 from app.models.draw import Draw, Participant, DrawStatus
+from tests.helpers import future_hour_iso, next_year_iso
 
 
 @pytest.mark.organizer
@@ -289,13 +290,13 @@ class TestUpdateDrawSchedule:
         response = client.put(
             f"/api/v1/draws/{draw_id}/schedule",
             headers=auth_headers,
-            json={"drawDate": "2025-12-31T20:00:00Z"}
+            json={"drawDate": future_hour_iso()}
         )
         
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-        assert "2025-12-31" in data["drawDate"]
+        assert future_hour_iso()[:10] in data["drawDate"]
     
     def test_update_schedule_invalid_hour(self, client, auth_headers):
         """Test that schedule must be at exact hour"""
@@ -320,10 +321,10 @@ class TestUpdateDrawSchedule:
         response = client.put(
             f"/api/v1/draws/{draw_id}/schedule",
             headers=auth_headers,
-            json={"drawDate": "2025-12-31T20:45:00Z"}
+            json={"drawDate": future_hour_iso(minute=45)}
         )
         
-        assert response.status_code == 422
+        assert response.status_code == 400
         assert "exact hour" in str(response.json()).lower()
     
     def test_update_schedule_completed_draw(self, client, auth_headers, test_db):
@@ -354,7 +355,7 @@ class TestUpdateDrawSchedule:
         response = client.put(
             f"/api/v1/draws/{draw_id}/schedule",
             headers=auth_headers,
-            json={"drawDate": "2025-12-31T20:00:00Z"}
+            json={"drawDate": future_hour_iso()}
         )
         
         assert response.status_code == 400

@@ -43,6 +43,35 @@ class TestDrawPublicInfo:
         assert "language" in data
         assert data["language"] in ["TR", "EN"]
     
+    def test_get_public_info_exposes_masked_organizer_name(self, client, auth_headers):
+        """Organizer is shown as 'First L.' without surname or email"""
+        create_response = client.post(
+            "/api/v1/draws/dynamic",
+            headers=auth_headers,
+            json={
+                "participants": [{
+                    "firstName": "Ayşe",
+                    "lastName": "demir",
+                    "email": "ayse@test.com"
+                }]
+            }
+        )
+        invite_code = create_response.json()["inviteCode"]
+
+        # A later participant must not replace the organizer
+        client.post(
+            f"/api/v1/draws/join/{invite_code}",
+            json={"firstName": "Mert", "lastName": "Kaya", "email": "mert@test.com"}
+        )
+
+        response = client.get(f"/api/v1/draws/join/{invite_code}")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["organizerName"] == "Ayşe D."
+        assert "ayse@test.com" not in response.text
+        assert "demir" not in response.text
+
     def test_get_public_info_invalid_code(self, client):
         """Test getting public info with invalid invite code"""
         response = client.get("/api/v1/draws/join/invalid-code-123")
