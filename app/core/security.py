@@ -90,3 +90,37 @@ def decode_refresh_token(token: str) -> Optional[dict]:
         return payload
     except InvalidTokenError:
         return None
+
+
+PARTICIPANT_TOKEN_TYPE = "participant"
+PARTICIPANT_TOKEN_EXPIRE_DAYS = 365
+
+
+def create_participant_token(participant_id: int, draw_id: int) -> str:
+    """
+    Create a long-lived token that identifies an anonymous participant.
+
+    Handed to the device that joined a draw so it can later read its own match
+    and register for push notifications without an account.
+    """
+    from datetime import timezone
+
+    payload = {
+        "sub": f"participant:{participant_id}",
+        "pid": participant_id,
+        "did": draw_id,
+        "type": PARTICIPANT_TOKEN_TYPE,
+        "exp": datetime.now(timezone.utc) + timedelta(days=PARTICIPANT_TOKEN_EXPIRE_DAYS),
+    }
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
+
+def decode_participant_token(token: str) -> Optional[dict]:
+    """Decode a participant token; returns None if invalid or of another type."""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    except InvalidTokenError:
+        return None
+    if payload.get("type") != PARTICIPANT_TOKEN_TYPE or not isinstance(payload.get("pid"), int):
+        return None
+    return payload

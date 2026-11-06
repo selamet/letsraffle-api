@@ -131,9 +131,10 @@ async def health_check():
 
 
 # Include routers
-from app.api.v1 import auth, draw
+from app.api.v1 import auth, draw, participant
 app.include_router(auth.router, prefix=f"{API_PREFIX}/auth", tags=["Authentication"])
 app.include_router(draw.router, prefix=f"{API_PREFIX}", tags=["Draw"])
+app.include_router(participant.router, prefix=f"{API_PREFIX}", tags=["Participant"])
 
 
 if __name__ == "__main__":

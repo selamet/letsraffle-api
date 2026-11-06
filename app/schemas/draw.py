@@ -142,6 +142,7 @@ class DynamicDrawResponse(BaseModel):
     message: str
     draw_id: int = Field(..., alias="drawId")
     invite_code: str = Field(..., alias="inviteCode")
+    participant_token: str = Field(..., alias="participantToken")
 
 
 class ParticipantJoinRequest(BaseModel):
@@ -228,3 +229,36 @@ class UpdateDrawSchedule(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     draw_date: Optional[datetime] = Field(None, alias="drawDate")
+
+
+# Participant (anonymous, token based) Schemas
+
+class ParticipantMe(BaseModel):
+    """What a participant token resolves to"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    participant_id: int = Field(..., alias="participantId")
+    draw_id: int = Field(..., alias="drawId")
+    invite_code: Optional[str] = Field(None, alias="inviteCode")
+    draw_status: str = Field(..., alias="drawStatus")
+    draw_date: Optional[datetime] = Field(None, alias="drawDate")
+    first_name: str = Field(..., alias="firstName")
+
+
+class MatchReceiver(BaseModel):
+    """The person the participant gives a gift to"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    first_name: str = Field(..., alias="firstName")
+    last_name: str = Field(..., alias="lastName")
+    address: Optional[str] = None
+    phone: Optional[str] = None
+
+
+class MatchResult(BaseModel):
+    """In-app draw result for a single participant"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    draw_id: int = Field(..., alias="drawId")
+    invite_code: Optional[str] = Field(None, alias="inviteCode")
+    receiver: MatchReceiver
