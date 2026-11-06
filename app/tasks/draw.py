@@ -141,6 +141,9 @@ def process_draw(self, draw_id: int) -> Dict[str, Any]:
         logger.info(f'Draw processed successfully: draw_id={draw_id}, matches_created={len(results)}')
         
         email_summary = _send_draw_result_emails(db, draw_id, results)
+
+        from app.tasks.push_tasks import enqueue, send_match_revealed_push_task
+        enqueue(send_match_revealed_push_task, draw_id)
         
         return {
             "status": "success",

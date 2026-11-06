@@ -53,6 +53,14 @@ class Settings(BaseSettings):
 
     # Sign in with Apple (iOS bundle identifier used as token audience)
     apple_bundle_id: str = "com.letsraffle.ios"
+
+    # APNs push notifications (token based auth). Push is disabled when unset.
+    apns_key_id: Optional[str] = None
+    apns_team_id: Optional[str] = None
+    apns_key: Optional[str] = None  # .p8 contents (PEM); "\\n" escapes are accepted
+    apns_key_path: Optional[str] = None
+    apns_topic: str = "com.letsraffle.ios"
+    apns_use_sandbox: bool = True
     
     # AWS SES Configuration
     aws_region: str = "us-east-1"

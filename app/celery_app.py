@@ -47,6 +47,10 @@ app.conf.update(
             'task': 'execute_scheduled_draw_task',
             'schedule': crontab(minute=0) # Every hour at minute 0
         },
+        'send_draw_reminders': {
+            'task': 'send_draw_reminders_task',
+            'schedule': crontab(minute=30)  # Every hour at minute 30
+        },
     },
 )
 
@@ -56,6 +60,7 @@ app.autodiscover_tasks(['app.tasks'])
 try:
     from app.tasks import draw
     from app.tasks import email_tasks
+    from app.tasks import push_tasks
 except ImportError as e:
     pass
 
