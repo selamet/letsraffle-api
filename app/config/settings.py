@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     
     # Sentry Configuration (Optional - only DSN from .env)
     sentry_dsn: Optional[str] = None
+
+    # Sign in with Apple (iOS bundle identifier used as token audience)
+    apple_bundle_id: str = "com.letsraffle.ios"
     
     # AWS SES Configuration
     aws_region: str = "us-east-1"

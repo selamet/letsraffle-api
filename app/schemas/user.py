@@ -4,6 +4,7 @@ User schemas for request/response validation
 
 from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import datetime
+from typing import Optional
 
 
 class UserCreate(BaseModel):
@@ -26,6 +27,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     created_at: datetime
     updated_at: datetime
+    has_apple: bool = False
 
 
 class TokenResponse(BaseModel):
@@ -45,6 +47,13 @@ class ForgotPasswordRequest(BaseModel):
     """Schema for forgot password request"""
     email: EmailStr
     language: str = "tr"
+
+
+class AppleSignInRequest(BaseModel):
+    """Schema for Sign in with Apple; names are only sent on the first authorization"""
+    identity_token: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 
 class ResetPasswordRequest(BaseModel):

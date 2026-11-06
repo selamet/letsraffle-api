@@ -18,7 +18,9 @@ class User(BaseModel):
     
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
-    password = Column(String(255), nullable=False)
+    # Nullable: accounts created with Sign in with Apple have no password.
+    password = Column(String(255), nullable=True)
+    apple_sub = Column(String(255), unique=True, index=True, nullable=True)
     
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email})>"
@@ -30,4 +32,11 @@ class User(BaseModel):
     
     def verify_password(self, password: str) -> bool:
         """Verify a password against the stored hash"""
+        if not self.password:
+            return False
         return pwd_context.verify(password, self.password)
+
+    @property
+    def has_apple(self) -> bool:
+        """Whether the account is linked with Sign in with Apple"""
+        return self.apple_sub is not None
