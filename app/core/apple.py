@@ -31,15 +31,20 @@ def verify_identity_token(identity_token: str) -> AppleIdentity:
     """
     Verify an Apple identity token (RS256) and return its subject and email.
 
-    Checks signature against Apple's JWKS, issuer, audience (iOS bundle id) and expiry.
+    Checks signature against Apple's JWKS, issuer, audience and expiry. The audience is the
+    iOS bundle id for the app, or the web Services ID for the Apple JS flow on the website.
     """
+    audiences = [settings.apple_bundle_id]
+    if settings.apple_services_id:
+        audiences.append(settings.apple_services_id)
+
     try:
         signing_key = _jwk_client.get_signing_key_from_jwt(identity_token)
         payload = jwt.decode(
             identity_token,
             signing_key.key,
             algorithms=["RS256"],
-            audience=settings.apple_bundle_id,
+            audience=audiences,
             issuer=APPLE_ISSUER,
         )
     except Exception as exc:  # PyJWT and network errors are all treated as invalid tokens

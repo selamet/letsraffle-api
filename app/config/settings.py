@@ -53,6 +53,11 @@ class Settings(BaseSettings):
 
     # Sign in with Apple (iOS bundle identifier used as token audience)
     apple_bundle_id: str = "com.letsraffle.ios"
+    # Web Services ID used by the Apple JS popup on letsraffle.co; web Apple sign-in is off when unset.
+    apple_services_id: Optional[str] = None
+
+    # Sign in with Google (web OAuth client ID, Google Identity Services); disabled when unset.
+    google_client_id: Optional[str] = None
 
     # APNs push notifications (token based auth). Push is disabled when unset.
     apns_key_id: Optional[str] = None

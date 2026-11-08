@@ -49,6 +49,18 @@ class TestAppleTokenVerification:
         with pytest.raises(apple.AppleTokenError):
             apple.verify_identity_token(apple_keys(**kwargs))
 
+    def test_accepts_web_services_id_when_configured(self, apple_keys, monkeypatch):
+        monkeypatch.setattr(apple.settings, "apple_services_id", "com.letsraffle.web")
+        identity = apple.verify_identity_token(apple_keys(aud="com.letsraffle.web"))
+        assert identity.sub == "apple-sub-1"
+        # The iOS bundle id keeps working alongside it
+        apple.verify_identity_token(apple_keys())
+
+    def test_rejects_web_audience_when_services_id_unset(self, apple_keys, monkeypatch):
+        monkeypatch.setattr(apple.settings, "apple_services_id", None)
+        with pytest.raises(apple.AppleTokenError):
+            apple.verify_identity_token(apple_keys(aud="com.letsraffle.web"))
+
     def test_rejects_foreign_signature(self, apple_keys):
         other_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         forged = jwt.encode({"iss": apple.APPLE_ISSUER, "aud": "com.letsraffle.ios", "sub": "x",
