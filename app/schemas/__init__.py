@@ -9,7 +9,8 @@ from app.schemas.user import (
     RefreshTokenRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest,
-    AppleSignInRequest
+    AppleSignInRequest,
+    GoogleSignInRequest
 )
 
 __all__ = [
@@ -19,5 +20,6 @@ __all__ = [
     "RefreshTokenRequest",
     "ForgotPasswordRequest",
     "ResetPasswordRequest",
-    "AppleSignInRequest"
+    "AppleSignInRequest",
+    "GoogleSignInRequest"
 ]

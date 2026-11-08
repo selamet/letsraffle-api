@@ -21,7 +21,8 @@ class User(BaseModel):
     # Nullable: accounts created with Sign in with Apple have no password.
     password = Column(String(255), nullable=True)
     apple_sub = Column(String(255), unique=True, index=True, nullable=True)
-    
+    google_sub = Column(String(255), unique=True, index=True, nullable=True)
+
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email})>"
     
@@ -40,3 +41,8 @@ class User(BaseModel):
     def has_apple(self) -> bool:
         """Whether the account is linked with Sign in with Apple"""
         return self.apple_sub is not None
+
+    @property
+    def has_google(self) -> bool:
+        """Whether the account is linked with Sign in with Google"""
+        return self.google_sub is not None
