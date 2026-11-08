@@ -14,6 +14,7 @@ from app.core import google
 from app.models import User
 
 CLIENT_ID = "1234-web.apps.googleusercontent.com"
+IOS_CLIENT_ID = "1234-ios.apps.googleusercontent.com"
 
 
 @pytest.fixture
@@ -25,6 +26,7 @@ def google_keys(monkeypatch):
         lambda token: SimpleNamespace(key=private_key.public_key())
     )
     monkeypatch.setattr(settings, "google_client_id", CLIENT_ID)
+    monkeypatch.setattr(settings, "google_ios_client_id", None)
 
     def make_token(sub="google-sub-1", email="ayse@gmail.com", email_verified=True, aud=CLIENT_ID,
                    iss="https://accounts.google.com", exp_offset=600):
@@ -64,6 +66,17 @@ class TestGoogleTokenVerification:
         with pytest.raises(google.GoogleTokenError):
             google.verify_id_token(forged)
 
+    def test_accepts_ios_client_audience(self, google_keys, monkeypatch):
+        monkeypatch.setattr(settings, "google_ios_client_id", IOS_CLIENT_ID)
+        identity = google.verify_id_token(google_keys(aud=IOS_CLIENT_ID))
+        assert identity.sub == "google-sub-1"
+        google.verify_id_token(google_keys())  # web client keeps working
+
+    def test_ios_audience_rejected_when_unset(self, google_keys, monkeypatch):
+        monkeypatch.setattr(settings, "google_ios_client_id", None)
+        with pytest.raises(google.GoogleTokenError):
+            google.verify_id_token(google_keys(aud=IOS_CLIENT_ID))
+
 
 @pytest.mark.auth
 class TestGoogleSignInEndpoint:
@@ -98,5 +111,6 @@ class TestGoogleSignInEndpoint:
 
     def test_unconfigured_returns_503(self, client, monkeypatch):
         monkeypatch.setattr(settings, "google_client_id", None)
+        monkeypatch.setattr(settings, "google_ios_client_id", None)
         response = client.post("/api/v1/auth/google", json={"credential": "anything"})
         assert response.status_code == 503

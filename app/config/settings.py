@@ -56,8 +56,14 @@ class Settings(BaseSettings):
     # Web Services ID used by the Apple JS popup on letsraffle.co; web Apple sign-in is off when unset.
     apple_services_id: Optional[str] = None
 
-    # Sign in with Google (web OAuth client ID, Google Identity Services); disabled when unset.
+    # Sign in with Google: web client ID (Google Identity Services on letsraffle.co) and iOS client
+    # ID (GoogleSignIn SDK). Tokens from either are accepted; Google sign-in is off when both are unset.
     google_client_id: Optional[str] = None
+    google_ios_client_id: Optional[str] = None
+
+    @property
+    def google_audiences(self) -> list[str]:
+        return [aud for aud in (self.google_client_id, self.google_ios_client_id) if aud]
 
     # APNs push notifications (token based auth). Push is disabled when unset.
     apns_key_id: Optional[str] = None

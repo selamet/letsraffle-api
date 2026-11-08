@@ -30,17 +30,21 @@ def verify_id_token(id_token: str) -> GoogleIdentity:
     """
     Verify a Google ID token (RS256) and return its subject and verified email.
 
-    Checks signature against Google's JWKS, issuer, audience (web client ID), expiry and
-    that Google has verified the email — accounts are linked by email, so an unverified
+    Checks signature against Google's JWKS, issuer, audience (web or iOS client ID), expiry
+    and that Google has verified the email — accounts are linked by email, so an unverified
     address must never be trusted.
     """
+    audiences = settings.google_audiences
+    if not audiences:
+        raise GoogleTokenError("Google sign-in is not configured")
+
     try:
         signing_key = _jwk_client.get_signing_key_from_jwt(id_token)
         payload = jwt.decode(
             id_token,
             signing_key.key,
             algorithms=["RS256"],
-            audience=settings.google_client_id,
+            audience=audiences,
             options={"require": ["exp", "iss", "aud", "sub"]},
         )
     except Exception as exc:  # PyJWT and network errors are all treated as invalid tokens

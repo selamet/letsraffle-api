@@ -271,13 +271,13 @@ async def sign_in_with_apple(request: AppleSignInRequest, db: Session = Depends(
 @router.post("/google", response_model=TokenResponse)
 async def sign_in_with_google(request: GoogleSignInRequest, db: Session = Depends(get_db)):
     """
-    Sign in (or sign up) with a Google Identity Services ID token (web).
+    Sign in (or sign up) with a Google ID token from the web (Google Identity Services) or iOS (GoogleSignIn).
 
     - Existing Google user (same `sub`) → signs in
     - Existing account with the same (Google-verified) email → links Google to it
     - Otherwise a new password-less account is created
     """
-    if not settings.google_client_id:
+    if not settings.google_audiences:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Google sign-in is not configured"
