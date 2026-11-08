@@ -5,7 +5,6 @@ from celery.schedules import crontab
 ENV = os.getenv('ENV', 'development')
 
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'amqp://guest:guest@rabbitmq:5672//')
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
 
 app = Celery('santas_draw')
 
@@ -13,9 +12,7 @@ app.conf.update(
     # Broker (RabbitMQ)
     broker_url=CELERY_BROKER_URL,
 
-    # Result backend (Redis)
-    result_backend=CELERY_RESULT_BACKEND,
-    result_expires=3600,
+    # No result backend: task results are never read, and production runs without Redis.
 
     # Serialization
     task_serializer='json',
