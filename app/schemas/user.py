@@ -28,6 +28,7 @@ class UserResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     has_apple: bool = False
+    has_google: bool = False
 
 
 class TokenResponse(BaseModel):
@@ -54,6 +55,11 @@ class AppleSignInRequest(BaseModel):
     identity_token: str
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+
+
+class GoogleSignInRequest(BaseModel):
+    """Schema for Sign in with Google; `credential` is the Google Identity Services ID token"""
+    credential: str
 
 
 class ResetPasswordRequest(BaseModel):

@@ -7,10 +7,11 @@ from sqlalchemy.orm import Session
 from app.models import get_db, User
 from app.schemas import (
     UserCreate, UserLogin, TokenResponse, RefreshTokenRequest, ForgotPasswordRequest,
-    ResetPasswordRequest, AppleSignInRequest
+    ResetPasswordRequest, AppleSignInRequest, GoogleSignInRequest
 )
 from app.api.deps import get_current_user
-from app.core import apple
+from app.config import settings
+from app.core import apple, google
 from app.schemas.user import UserResponse
 from app.models.draw import Draw
 from app.models.device import Device
@@ -263,6 +264,46 @@ async def sign_in_with_apple(request: AppleSignInRequest, db: Session = Depends(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Apple account has no email. Please share your email on first sign in."
         )
+
+    return _token_response(user)
+
+
+@router.post("/google", response_model=TokenResponse)
+async def sign_in_with_google(request: GoogleSignInRequest, db: Session = Depends(get_db)):
+    """
+    Sign in (or sign up) with a Google ID token from the web (Google Identity Services) or iOS (GoogleSignIn).
+
+    - Existing Google user (same `sub`) → signs in
+    - Existing account with the same (Google-verified) email → links Google to it
+    - Otherwise a new password-less account is created
+    """
+    if not settings.google_audiences:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google sign-in is not configured"
+        )
+
+    try:
+        identity = google.verify_id_token(request.credential)
+    except google.GoogleTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google ID token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user = db.query(User).filter(User.google_sub == identity.sub).first()
+
+    if not user:
+        email = identity.email.lower()
+        user = db.query(User).filter(User.email == email).first()
+        if user:
+            user.google_sub = identity.sub
+        else:
+            user = User(email=email, password=None, google_sub=identity.sub)
+            db.add(user)
+        db.commit()
+        db.refresh(user)
 
     return _token_response(user)
 
