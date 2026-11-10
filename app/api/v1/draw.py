@@ -11,7 +11,8 @@ from app.schemas.draw import (
     DrawListItem
 )
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.models.draw import Draw, DrawStatus, DrawType, Participant, Language
+from app.models.draw import Draw, DrawStatus, DrawType, Participant, Language, DrawResult
+from app.models.device import DeviceParticipant
 from app.utils.link_generator import generate_invite_code
 from app.utils.draw_date import normalize_and_validate_draw_date
 from app.utils.names import public_display_name
@@ -454,6 +455,60 @@ async def get_draw_detail(
         language=draw.language,
         participants=participant_details
     )
+
+
+@router.delete("/draws/{draw_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_draw(
+    draw_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Permanently delete a draw (organizer only).
+
+    Removes the draw together with its participants, match results and the
+    participants' device links. A draw that has already been held (completed,
+    or has match results) cannot be deleted.
+
+    Raises:
+    - HTTPException 404: If draw not found
+    - HTTPException 403: If user is not the organizer
+    - HTTPException 400: If the draw has already been held
+    """
+    draw = db.query(Draw).filter(Draw.id == draw_id).first()
+
+    if not draw:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Draw not found"
+        )
+
+    if draw.creator_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to delete this draw"
+        )
+
+    already_held = draw.status == DrawStatus.COMPLETED.value or (
+        db.query(DrawResult.id).filter(DrawResult.draw_id == draw_id).first() is not None
+    )
+    if already_held:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A draw that has already been held cannot be deleted"
+        )
+
+    # Delete dependents explicitly so this also works where FK cascades are off (e.g. SQLite).
+    participant_ids = [pid for (pid,) in db.query(Participant.id).filter(Participant.draw_id == draw_id).all()]
+    db.query(DrawResult).filter(DrawResult.draw_id == draw_id).delete(synchronize_session=False)
+    if participant_ids:
+        db.query(DeviceParticipant).filter(
+            DeviceParticipant.participant_id.in_(participant_ids)
+        ).delete(synchronize_session=False)
+    db.delete(draw)
+    db.commit()
+
+    logger.info(f"Draw deleted: draw_id={draw_id}, participants={len(participant_ids)}, by_user={current_user.id}")
 
 
 @router.delete("/draws/{draw_id}/participants/{participant_id}", status_code=status.HTTP_204_NO_CONTENT)

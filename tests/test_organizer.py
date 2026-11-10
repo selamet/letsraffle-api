@@ -497,3 +497,60 @@ class TestExecuteDraw:
         
         assert response.status_code == 403
 
+
+
+
+def _create_dynamic_draw(client, headers):
+    response = client.post(
+        "/api/v1/draws/dynamic",
+        headers=headers,
+        json={
+            "addressRequired": False,
+            "phoneNumberRequired": False,
+            "participants": [{"firstName": "Org", "lastName": "Test", "email": "org@test.com"}]
+        }
+    )
+    return response.json()["drawId"], response.json()["inviteCode"]
+
+
+@pytest.mark.organizer
+class TestDeleteDraw:
+    """Test deleting a draw (organizer only)"""
+
+    def test_delete_draw_success(self, client, auth_headers, test_db):
+        draw_id, invite_code = _create_dynamic_draw(client, auth_headers)
+        client.post(f"/api/v1/draws/join/{invite_code}", json={"firstName": "P1", "lastName": "T", "email": "p1@test.com"})
+
+        response = client.delete(f"/api/v1/draws/{draw_id}", headers=auth_headers)
+
+        assert response.status_code == 204
+        assert test_db.query(Draw).filter(Draw.id == draw_id).first() is None
+        assert test_db.query(Participant).filter(Participant.draw_id == draw_id).count() == 0
+        assert client.get(f"/api/v1/draws/{invite_code}", headers=auth_headers).status_code == 404
+        assert all(d["id"] != draw_id for d in client.get("/api/v1/draws", headers=auth_headers).json())
+
+    def test_cannot_delete_completed_draw(self, client, auth_headers, test_db):
+        draw_id, _ = _create_dynamic_draw(client, auth_headers)
+        draw = test_db.query(Draw).filter(Draw.id == draw_id).first()
+        draw.status = DrawStatus.COMPLETED.value
+        test_db.commit()
+
+        response = client.delete(f"/api/v1/draws/{draw_id}", headers=auth_headers)
+
+        assert response.status_code == 400
+        assert test_db.query(Draw).filter(Draw.id == draw_id).first() is not None
+
+    def test_delete_draw_non_organizer(self, client, auth_headers, second_auth_headers, test_db):
+        draw_id, _ = _create_dynamic_draw(client, auth_headers)
+
+        response = client.delete(f"/api/v1/draws/{draw_id}", headers=second_auth_headers)
+
+        assert response.status_code == 403
+        assert test_db.query(Draw).filter(Draw.id == draw_id).first() is not None
+
+    def test_delete_draw_not_found(self, client, auth_headers):
+        assert client.delete("/api/v1/draws/999999", headers=auth_headers).status_code == 404
+
+    def test_delete_draw_requires_auth(self, client, auth_headers):
+        draw_id, _ = _create_dynamic_draw(client, auth_headers)
+        assert client.delete(f"/api/v1/draws/{draw_id}").status_code in (401, 403)
