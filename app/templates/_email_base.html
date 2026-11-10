@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
+  <title>{% block title %}Lets Raffle{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,900&family=Great+Vibes&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; padding: 0; background: #f3e6d6; -webkit-text-size-adjust: 100%; }
+    table { border-collapse: collapse; }
+    img { border: 0; display: block; }
+    a { text-decoration: none; }
+    .display { font-family: 'Fraunces', Georgia, 'Times New Roman', serif; font-weight: 900; }
+    .script { font-family: 'Great Vibes', 'Brush Script MT', cursive; font-weight: 400; }
+    .body { font-family: 'Nunito', 'Segoe UI', Helvetica, Arial, sans-serif; }
+    @media only screen and (max-width: 620px) {
+      .card { width: 100% !important; border-radius: 0 !important; }
+      .px { padding-left: 24px !important; padding-right: 24px !important; }
+      .hero-script { font-size: 46px !important; }
+      .cta a { display: block !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background:#f3e6d6;">
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0; color:transparent;">{% block preheader %}{% endblock %}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3e6d6;">
+    <tr>
+      <td align="center" style="padding:28px 12px;">
+        <table role="presentation" class="card" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background:#fffbf5; border-radius:28px; overflow:hidden; border:3px solid #e6b94a;">
+
+          <!-- header: cranberry scene with string lights, logo and hero -->
+          <tr>
+            <td align="center" style="background:#a3171c; background-image:radial-gradient(circle at 50% 20%, #c4242a 0%, #a3171c 55%, #7a0f14 100%); padding:26px 24px 0 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr><td align="center" style="font-size:18px; line-height:18px; letter-spacing:10px; color:#f6d98a;">&#9679; <span style="color:#4fb87e;">&#9679;</span> &#9679; <span style="color:#ff8a7a;">&#9679;</span> &#9679; <span style="color:#4fb87e;">&#9679;</span> &#9679;</td></tr>
+                <tr><td align="center" style="padding-top:14px;"><img src="{{ asset_base }}/email/lockup.png" width="200" alt="Let's Raffle" style="width:200px; height:auto;"></td></tr>
+                <tr><td align="center" class="script hero-script" style="padding-top:10px; font-family:'Great Vibes','Brush Script MT',cursive; font-size:56px; line-height:1.1; color:#f6d98a;">{% block hero_script %}{% endblock %}</td></tr>
+                <tr><td align="center" style="padding-top:6px;"><img src="{{ asset_base }}/email/{% block hero_image %}santa-wave.png{% endblock %}" width="{% block hero_width %}170{% endblock %}" alt="" style="height:auto;"></td></tr>
+              </table>
+            </td>
+          </tr>
+          <!-- snow edge -->
+          <tr><td style="background:#a3171c; line-height:0; font-size:0;"><div style="height:22px; background:#fffbf5; border-radius:28px 28px 0 0;"></div></td></tr>
+
+          <!-- content -->
+          <tr>
+            <td class="px body" style="padding:10px 48px 8px 48px; font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif; color:#3a2626;">
+              {% block content %}{% endblock %}
+            </td>
+          </tr>
+
+          <!-- candy-cane divider -->
+          <tr>
+            <td align="center" style="padding:18px 48px 0 48px;">
+              <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+                {% for i in range(9) %}<td width="14" height="6" style="background:{% if i % 2 == 0 %}#b91c1c{% else %}#f3d9d9{% endif %}; {% if i == 0 %}border-radius:3px 0 0 3px;{% elif i == 8 %}border-radius:0 3px 3px 0;{% endif %}"></td>{% endfor %}
+              </tr></table>
+            </td>
+          </tr>
+
+          <!-- footer -->
+          <tr>
+            <td align="center" class="px body" style="padding:16px 48px 30px 48px; font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif; font-size:12px; line-height:1.6; color:#8a6f6f;">
+              {% block footer %}{% endblock %}
+              <br><a href="{{ asset_base }}" style="color:#9b1418; font-weight:800;">letsraffle.co</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

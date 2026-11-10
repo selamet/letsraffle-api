@@ -13,6 +13,7 @@ from botocore.exceptions import ClientError
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from app.config import settings
 from app.models.draw import Draw, DrawResult, Participant, Language
+from app.core.security import create_participant_token
 
 logger = logging.getLogger(__name__)
 
@@ -24,21 +25,19 @@ class EmailService:
     TEMPLATE_CONFIG = {
         Language.EN.value: {
             'template': 'email-template-en.html',
-            'subject': '🎄 Secret Santa Draw Result',
-            'not_provided': 'Not provided'
+            'subject': '🎁 Santa drew a name for you!'
         },
         Language.TR.value: {
             'template': 'email-template-tr.html',
-            'subject': '🎄 Yılbaşı Çekiliş Sonucu',
-            'not_provided': 'Belirtilmemiş'
+            'subject': '🎁 Noel Baba senin için bir isim çekti!'
         },
         'reset_password_en': {
             'template': 'reset-password-template-en.html',
-            'subject': 'Password Reset Request'
+            'subject': '🔑 Reset your Let\'s Raffle password'
         },
         'reset_password_tr': {
             'template': 'reset-password-template-tr.html',
-            'subject': 'Şifre Sıfırlama Talebi'
+            'subject': '🔑 Let\'s Raffle şifre sıfırlama'
         }
     }
     
@@ -78,24 +77,28 @@ class EmailService:
             self.TEMPLATE_CONFIG[Language.TR.value]  # Default to Turkish
         )
     
+    @staticmethod
+    def reveal_link(giver: Participant, draw: Draw) -> str:
+        """Personal link to the web page that reveals the giver's match (no match details in the email)."""
+        token = create_participant_token(giver.id, draw.id)
+        return f"{settings.frontend_url.rstrip('/')}/reveal/{token}"
+
     def _build_template_context(
         self,
         giver: Participant,
-        receiver: Participant,
-        language: str
+        draw: Draw,
     ) -> Dict[str, str]:
-        """Build template context for email rendering"""
-        config = self._get_template_config(language)
-        not_provided = config['not_provided']
-        
+        """Build template context for the draw result email.
+
+        The receiver is intentionally not included: the email only links to the reveal page.
+        """
         return {
-            'participant_name': f"{giver.first_name} {giver.last_name}",
-            'target_name': f"{receiver.first_name} {receiver.last_name}",
-            'target_email': receiver.email,
-            'target_phone': receiver.phone or not_provided,
-            'target_address': receiver.address or not_provided
+            'lang': (draw.language or Language.TR.value).lower(),
+            'asset_base': settings.frontend_url.rstrip('/'),
+            'participant_name': giver.first_name,
+            'reveal_link': self.reveal_link(giver, draw),
         }
-    
+
     def send_draw_result_email(
         self,
         draw: Draw,
@@ -116,7 +119,7 @@ class EmailService:
         try:
             config = self._get_template_config(draw.language)
             template = self.jinja_env.get_template(config['template'])
-            context = self._build_template_context(giver, receiver, draw.language)
+            context = self._build_template_context(giver, draw)
             body_html = template.render(**context)
             
             response = self.ses_client.send_email(
@@ -243,7 +246,9 @@ class EmailService:
             reset_link = f"{settings.frontend_url}/reset-password?token={token}"
             
             context = {
-                'reset_link': reset_link
+                'lang': 'tr' if lang_upper == 'TR' else 'en',
+                'asset_base': settings.frontend_url.rstrip('/'),
+                'reset_link': reset_link,
             }
             
             body_html = template.render(**context)

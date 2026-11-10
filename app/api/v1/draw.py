@@ -118,7 +118,7 @@ async def create_dynamic_draw(
     - HTTPException: If there's an error during draw creation
     """
     try:
-        invite_code = generate_invite_code(db)
+        invite_code = generate_invite_code(db, language=draw_data.language)
         
         new_draw = Draw(
             creator_id=current_user.id,

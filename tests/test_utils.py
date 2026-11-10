@@ -23,6 +23,20 @@ class TestInviteCodeGenerator:
         assert parts[2].isdigit()  # number
         assert len(parts[2]) == 3  # 3-digit number
     
+    def test_generate_invite_code_turkish(self, test_db):
+        """Turkish draws get Turkish, ASCII-only words"""
+        from app.utils.link_generator import TR_ADJECTIVES, TR_NOUNS
+        for _ in range(20):
+            adj, noun, num = generate_invite_code(test_db, language="TR").split('-')
+            assert adj in TR_ADJECTIVES and noun in TR_NOUNS
+            assert num.isdigit() and len(num) == 3
+            assert (adj + noun).isascii() and (adj + noun).isalpha()
+
+    def test_generate_invite_code_english(self, test_db):
+        from app.utils.link_generator import EN_ADJECTIVES, EN_NOUNS
+        adj, noun, _ = generate_invite_code(test_db, language="EN").split('-')
+        assert adj in EN_ADJECTIVES and noun in EN_NOUNS
+
     def test_generate_invite_code_uniqueness(self, test_db):
         """Test that generated codes are unique"""
         codes = set()
