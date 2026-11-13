@@ -2,6 +2,8 @@
 Authentication endpoints
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.models import get_db, User
@@ -18,11 +20,9 @@ from app.models.device import Device
 from app.core.security import create_access_token, create_refresh_token, decode_refresh_token, decode_access_token
 from app.tasks.email_tasks import send_password_reset_email_task
 from datetime import timedelta
-import logging
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
