@@ -85,6 +85,20 @@ The application uses environment variables loaded from `.env` file. Key settings
 - `DATABASE_POOL_SIZE` - Connection pool size
 - `DATABASE_MAX_OVERFLOW` - Max overflow connections
 
+## Announcement e-mails
+
+Campaign e-mails (for example the 2027 launch announcement) are sent with a script, never automatically:
+
+```bash
+python -m scripts.send_announcement                      # dry run: recipient counts only
+python -m scripts.send_announcement --to me@example.com  # one test e-mail
+python -m scripts.send_announcement --apply              # send to every registered user
+```
+
+Every e-mail carries a personal unsubscribe link (`/api/v1/email/unsubscribe`) and one-click
+`List-Unsubscribe` headers. Unsubscribed addresses are skipped, and sent addresses are recorded so the
+script can be re-run safely. `API_URL` must be the public URL of the API in production.
+
 ## API Documentation
 
 After running the application:

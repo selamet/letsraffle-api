@@ -6,6 +6,8 @@ Creates HTML emails using Jinja2 template engine.
 """
 
 import logging
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
 from typing import List, Dict, Tuple
 import boto3
@@ -13,7 +15,7 @@ from botocore.exceptions import ClientError
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from app.config import settings
 from app.models.draw import Draw, DrawResult, Participant, Language
-from app.core.security import create_participant_token
+from app.core.security import create_participant_token, create_unsubscribe_token
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +43,34 @@ class EmailService:
         }
     }
     
+    # Announcement campaigns sent with scripts/send_announcement.py
+    ANNOUNCEMENT_CONFIG = {
+        '2027-launch': {
+            Language.TR.value: {
+                'template': 'announcement-2027-tr.html',
+                'subject': '🎄 Lets Raffle 2027: yeni tasarım, iPhone uygulaması ve dahası',
+                'text': (
+                    "Lets Raffle 2027 için baştan aşağı yenilendi: yeni tasarım, iPhone uygulaması, "
+                    "ofise asmalık QR kodlu afiş ve hikâyede paylaşılabilen davetiye.\n\n"
+                    "Çekilişini başlat: {site}\n"
+                    "iPhone uygulaması: {app_store}\n\n"
+                    "Bu e-postaları almak istemiyorsan listeden çık: {unsubscribe}\n"
+                ),
+            },
+            Language.EN.value: {
+                'template': 'announcement-2027-en.html',
+                'subject': '🎄 Lets Raffle 2027: a new look, an iPhone app and more',
+                'text': (
+                    "Lets Raffle has been rebuilt for 2027: a new look, an iPhone app, "
+                    "a printable QR poster for the office and an invitation card for stories.\n\n"
+                    "Start your draw: {site}\n"
+                    "iPhone app: {app_store}\n\n"
+                    "To stop receiving these e-mails, unsubscribe: {unsubscribe}\n"
+                ),
+            },
+        },
+    }
+
     def __init__(self):
         """Initialize SES client and Jinja2 environment"""
         self.ses_client = self._create_ses_client()
@@ -274,3 +304,59 @@ class EmailService:
             logger.error(f"Unexpected error sending password reset email to {email}: {e}", exc_info=True)
             return False
 
+
+    @staticmethod
+    def unsubscribe_link(email: str, language: str = Language.TR.value) -> str:
+        """Personal opt-out link for announcement e-mails (served by this API)."""
+        token = create_unsubscribe_token(email, language)
+        return f"{settings.api_url.rstrip('/')}/api/{settings.api_version}/email/unsubscribe?token={token}"
+
+    def render_announcement(self, campaign: str, email: str, language: str = Language.TR.value) -> Tuple[str, str, str, str]:
+        """Render an announcement for one recipient: (subject, html, plain text, unsubscribe link)."""
+        language = Language.EN.value if (language or '').upper() == Language.EN.value else Language.TR.value
+        config = self.ANNOUNCEMENT_CONFIG[campaign][language]
+        site = settings.frontend_url.rstrip('/')
+        link = self.unsubscribe_link(email, language)
+        html = self.jinja_env.get_template(config['template']).render(
+            lang=language.lower(),
+            asset_base=site,
+            app_store_url=settings.app_store_url,
+            unsubscribe_link=link,
+        )
+        text = config['text'].format(site=site, app_store=settings.app_store_url, unsubscribe=link)
+        return config['subject'], html, text, link
+
+    def send_announcement_email(self, campaign: str, email: str, language: str = Language.TR.value) -> bool:
+        """
+        Send an announcement to one address.
+
+        Sent as a raw message so it can carry List-Unsubscribe headers (one-click unsubscribe).
+        """
+        try:
+            subject, html, text, link = self.render_announcement(campaign, email, language)
+
+            message = MIMEMultipart('alternative')
+            message['Subject'] = subject
+            message['From'] = self.from_email
+            message['To'] = email
+            message['List-Unsubscribe'] = f"<{link}>"
+            message['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
+            message.attach(MIMEText(text, 'plain', 'utf-8'))
+            message.attach(MIMEText(html, 'html', 'utf-8'))
+
+            response = self.ses_client.send_raw_email(
+                Source=self.from_email,
+                Destinations=[email],
+                RawMessage={'Data': message.as_string()},
+            )
+            logger.info(f"Announcement '{campaign}' sent to {email}. MessageId: {response['MessageId']}")
+            return True
+
+        except ClientError as e:
+            error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+            error_message = e.response.get('Error', {}).get('Message', str(e))
+            logger.error(f"Failed to send announcement '{campaign}' to {email}: {error_code} - {error_message}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error sending announcement '{campaign}' to {email}: {e}", exc_info=True)
+            return False

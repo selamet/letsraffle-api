@@ -1,0 +1,45 @@
+{% set tr = lang == 'tr' %}
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Lets Raffle</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,900&family=Nunito:wght@600;700;900&display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; min-height: 100%; }
+    body { background: #a3171c; background-image: radial-gradient(1200px 820px at 50% 30%, #c4242a 0%, #a3171c 50%, #6e0d12 100%); font-family: 'Nunito', 'Segoe UI', Helvetica, Arial, sans-serif; color: #3a2626; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; min-height: 100vh; }
+    .card { width: 100%; max-width: 440px; background: #fffbf5; border: 3px solid #e6b94a; border-radius: 28px; padding: 34px 30px 30px; text-align: center; box-sizing: border-box; }
+    .logo { width: 180px; height: auto; margin: 0 auto 6px; display: block; }
+    h1 { font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 26px; line-height: 1.2; color: #9b1418; margin: 18px 0 10px; }
+    p { font-size: 16px; line-height: 1.6; margin: 0 0 8px; color: #6b5050; }
+    button, .home { display: inline-block; margin-top: 18px; border: 0; cursor: pointer; font: inherit; font-size: 17px; font-weight: 900; line-height: 1; padding: 18px 30px; border-radius: 18px; text-decoration: none; }
+    button { background: linear-gradient(180deg, #d0282f, #a3171c); color: #fffbf5; border-bottom: 5px solid #6e0d12; }
+    .home { background: linear-gradient(180deg, #f8e09a, #e6b94a); color: #5a1a00; border-bottom: 5px solid #b8892b; }
+    .site { display: block; margin-top: 22px; font-size: 13px; font-weight: 900; color: #9b1418; text-decoration: none; }
+    .logo-wrap { background: #a3171c; border-radius: 20px; padding: 16px 12px 10px; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="logo-wrap"><img class="logo" src="{{ asset_base }}/email/lockup.png" alt="Lets Raffle"></div>
+    {% if state == 'confirm' %}
+      <h1>{{ 'Listeden çıkmak istiyor musun?' if tr else 'Unsubscribe from our e-mails?' }}</h1>
+      <p>{{ 'Onaylarsan sana bir daha duyuru e-postası göndermeyiz. Çekiliş sonucu ve şifre sıfırlama e-postaları gelmeye devam eder.' if tr else 'If you confirm, we will not send you announcement e-mails again. Draw result and password reset e-mails will still reach you.' }}</p>
+      <form method="post" action="?token={{ token | urlencode }}">
+        <button type="submit">{{ 'Listeden çık' if tr else 'Unsubscribe' }}</button>
+      </form>
+    {% elif state == 'done' %}
+      <h1>{{ 'Listeden çıkarıldın' if tr else 'You are unsubscribed' }}</h1>
+      <p>{{ 'Sana bir daha duyuru e-postası göndermeyeceğiz. Çekiliş sonucu ve şifre sıfırlama e-postaları gelmeye devam eder.' if tr else 'We will not send you announcement e-mails again. Draw result and password reset e-mails will still reach you.' }}</p>
+      <a class="home" href="{{ asset_base }}">{{ 'Ana sayfaya dön' if tr else 'Back to the home page' }}</a>
+    {% else %}
+      <h1>Bağlantı geçersiz · Invalid link</h1>
+      <p>Bu bağlantı eksik ya da bozuk görünüyor. E-postadaki bağlantıya yeniden tıklamayı dene.</p>
+      <p>This link looks incomplete or broken. Try the link in the e-mail again.</p>
+    {% endif %}
+    <a class="site" href="{{ asset_base }}">letsraffle.co</a>
+  </main>
+</body>
+</html>
