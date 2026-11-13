@@ -58,6 +58,15 @@ class Settings(BaseSettings):
     apple_bundle_id: str = "com.letsraffle.ios"
     # Web Services ID used by the Apple JS popup on letsraffle.co; web Apple sign-in is off when unset.
     apple_services_id: Optional[str] = None
+    # Sign in with Apple key (.p8), used to revoke a user's Apple tokens when the account is
+    # deleted. Token exchange and revocation are skipped when unset.
+    apple_team_id: Optional[str] = None
+    apple_signin_key_id: Optional[str] = None
+    apple_signin_key: Optional[str] = None  # .p8 contents (PEM); "\\n" escapes are accepted
+
+    @property
+    def apple_signin_team_id(self) -> Optional[str]:
+        return self.apple_team_id or self.apns_team_id
 
     # Sign in with Google: web client ID (Google Identity Services on letsraffle.co) and iOS client
     # ID (GoogleSignIn SDK). Tokens from either are accepted; Google sign-in is off when both are unset.

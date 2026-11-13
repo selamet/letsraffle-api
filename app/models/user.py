@@ -22,6 +22,11 @@ class User(BaseModel):
     password = Column(String(255), nullable=True)
     apple_sub = Column(String(255), unique=True, index=True, nullable=True)
     google_sub = Column(String(255), unique=True, index=True, nullable=True)
+    # Kept only to revoke the user's Apple tokens when the account is deleted. It is useless
+    # without the Sign in with Apple key, which never leaves the server environment.
+    apple_refresh_token = Column(String(1024), nullable=True)
+    # The client the refresh token belongs to (iOS bundle id or web Services ID).
+    apple_client_id = Column(String(255), nullable=True)
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email})>"

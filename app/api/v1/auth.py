@@ -2,6 +2,8 @@
 Authentication endpoints
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.models import get_db, User
@@ -19,6 +21,7 @@ from app.core.security import create_access_token, create_refresh_token, decode_
 from app.tasks.email_tasks import send_password_reset_email_task
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -261,6 +264,14 @@ async def sign_in_with_apple(request: AppleSignInRequest, db: Session = Depends(
             detail="Apple account has no email. Please share your email on first sign in."
         )
 
+    if request.authorization_code and identity.audience:
+        refresh_token = apple.exchange_authorization_code(request.authorization_code, identity.audience)
+        if refresh_token:
+            user.apple_refresh_token = refresh_token
+            user.apple_client_id = identity.audience
+            db.commit()
+            db.refresh(user)
+
     return _token_response(user)
 
 
@@ -317,6 +328,11 @@ async def delete_me(current_user: User = Depends(get_current_user), db: Session 
 
     Draws created by the user are kept for their participants but detached from the account.
     """
+    if current_user.apple_refresh_token and current_user.apple_client_id:
+        revoked = apple.revoke_refresh_token(current_user.apple_refresh_token, current_user.apple_client_id)
+        if not revoked:
+            logger.warning(f"Apple tokens were not revoked for deleted user id={current_user.id}")
+
     db.query(Draw).filter(Draw.creator_id == current_user.id).update(
         {Draw.creator_id: None}, synchronize_session=False
     )

@@ -53,6 +53,9 @@ class ForgotPasswordRequest(BaseModel):
 class AppleSignInRequest(BaseModel):
     """Schema for Sign in with Apple; names are only sent on the first authorization"""
     identity_token: str
+    # One-time code from the same authorization; exchanged for the refresh token that
+    # account deletion revokes. Optional so older app versions keep working.
+    authorization_code: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
 
