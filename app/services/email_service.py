@@ -6,16 +6,18 @@ Creates HTML emails using Jinja2 template engine.
 """
 
 import logging
+from datetime import datetime, timedelta, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Dict, Optional, Tuple
 import boto3
 from botocore.exceptions import ClientError
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from app.config import settings
 from app.models.draw import Draw, DrawResult, Participant, Language
 from app.core.security import create_participant_token, create_unsubscribe_token
+from app.utils.names import draw_display_name
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +45,27 @@ class EmailService:
         }
     }
     
+    # E-mails around a draw other than the result: one bilingual template each
+    DRAW_EMAIL_CONFIG = {
+        'join_confirmation': {
+            'template': 'join-confirmation.html',
+            'subject': {'TR': '🎄 Çekilişe katıldın: {name}', 'EN': "🎄 You're in: {name}"},
+        },
+        'draw_created': {
+            'template': 'draw-created.html',
+            'subject': {'TR': '🎁 Çekilişin hazır: {name}', 'EN': '🎁 Your draw is ready: {name}'},
+        },
+        'draw_reminder': {
+            'template': 'draw-reminder.html',
+            'subject': {'TR': '⏰ Çekilişin yarın: {name}', 'EN': '⏰ Your draw is tomorrow: {name}'},
+        },
+    }
+
+    MONTHS = {
+        'TR': ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
+        'EN': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    }
+
     # Announcement campaigns sent with scripts/send_announcement.py
     ANNOUNCEMENT_CONFIG = {
         '2027-launch': {
@@ -360,3 +383,83 @@ class EmailService:
         except Exception as e:
             logger.error(f"Unexpected error sending announcement '{campaign}' to {email}: {e}", exc_info=True)
             return False
+
+    # ── draw life-cycle e-mails (created / joined / reminder) ──
+
+    @classmethod
+    def format_draw_date(cls, draw_date: Optional[datetime], language: str) -> Optional[str]:
+        """
+        Human readable draw time. Dates are stored in UTC; Turkish e-mails show Türkiye time
+        (UTC+3 all year), English ones say UTC because the reader's time zone is unknown.
+        """
+        if not draw_date:
+            return None
+        if draw_date.tzinfo is None:
+            draw_date = draw_date.replace(tzinfo=timezone.utc)
+        if (language or '').upper() == Language.EN.value:
+            local = draw_date.astimezone(timezone.utc)
+            return f"{local.day} {cls.MONTHS['EN'][local.month - 1]} {local.year}, {local:%H:%M} UTC"
+        local = draw_date.astimezone(timezone(timedelta(hours=3)))
+        return f"{local.day} {cls.MONTHS['TR'][local.month - 1]} {local.year}, {local:%H:%M}"
+
+    def render_draw_email(self, kind: str, draw: Draw, **extra) -> Tuple[str, str]:
+        """Render one of the DRAW_EMAIL_CONFIG e-mails for a draw: (subject, html)."""
+        language = Language.EN.value if (draw.language or '').upper() == Language.EN.value else Language.TR.value
+        config = self.DRAW_EMAIL_CONFIG[kind]
+        site = settings.frontend_url.rstrip('/')
+        name = draw_display_name(draw.invite_code) or f"#{draw.id}"
+        context = {
+            'lang': language.lower(),
+            'asset_base': site,
+            'draw_name': name,
+            'invite_code': draw.invite_code,
+            'draw_date_text': self.format_draw_date(draw.draw_date, language),
+            'invite_link': f"{site}/draw/join/{draw.invite_code}",
+            'manage_link': f"{site}/draws/{draw.invite_code}",
+            **extra,
+        }
+        html = self.jinja_env.get_template(config['template']).render(**context)
+        return config['subject'][language].format(name=name), html
+
+    def _send_html(self, to: str, subject: str, html: str, what: str) -> bool:
+        """Send a single HTML e-mail; never raises."""
+        try:
+            response = self.ses_client.send_email(
+                Source=self.from_email,
+                Destination={'ToAddresses': [to]},
+                Message={
+                    'Subject': {'Data': subject, 'Charset': 'UTF-8'},
+                    'Body': {'Html': {'Data': html, 'Charset': 'UTF-8'}}
+                }
+            )
+            logger.info(f"{what} e-mail sent to {to}. MessageId: {response['MessageId']}")
+            return True
+        except ClientError as e:
+            error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+            error_message = e.response.get('Error', {}).get('Message', str(e))
+            logger.error(f"Failed to send {what} e-mail to {to}: {error_code} - {error_message}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error sending {what} e-mail to {to}: {e}", exc_info=True)
+            return False
+
+    def send_join_confirmation_email(self, participant: Participant, draw: Draw) -> bool:
+        """Tell a participant they are on the list and when the draw takes place."""
+        subject, html = self.render_draw_email(
+            'join_confirmation', draw,
+            participant_name=participant.first_name,
+            status_link=self.reveal_link(participant, draw),
+        )
+        return self._send_html(participant.email, subject, html, 'Join confirmation')
+
+    def send_draw_created_email(self, draw: Draw, email: str, organizer_name: str) -> bool:
+        """Send the organizer the invite link, code and schedule of the draw they just created."""
+        subject, html = self.render_draw_email('draw_created', draw, organizer_name=organizer_name)
+        return self._send_html(email, subject, html, 'Draw created')
+
+    def send_draw_reminder_email(self, draw: Draw, email: str, organizer_name: str, participant_count: int) -> bool:
+        """Remind the organizer the day before the draw, with the number of participants so far."""
+        subject, html = self.render_draw_email(
+            'draw_reminder', draw, organizer_name=organizer_name, participant_count=participant_count
+        )
+        return self._send_html(email, subject, html, 'Draw reminder')

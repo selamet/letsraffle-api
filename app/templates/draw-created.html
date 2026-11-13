@@ -1,0 +1,21 @@
+{% extends "_email_base.html" %}
+{% import "_email_parts.html" as ui %}
+{% set tr = lang == 'tr' %}
+{% block title %}{{ 'Çekilişin hazır' if tr else 'Your draw is ready' }}{% endblock %}
+{% block preheader %}{{ 'Davet linkin ve kodun burada. Paylaş, herkes katılsın.' if tr else 'Your invite link and code are here. Share them so everyone can join.' }}{% endblock %}
+{% block hero_script %}{{ 'Çekilişin hazır!' if tr else 'All set!' }}{% endblock %}
+{% block hero_image %}gift.png{% endblock %}
+{% block hero_width %}130{% endblock %}
+{% block content %}
+  {{ ui.heading(('Sevgili ' ~ organizer_name ~ ',') if tr else ('Dear ' ~ organizer_name ~ ',')) }}
+  {{ ui.lead('Çekilişini oluşturdun. Şimdi sıra davet etmekte: linki ya da kodu paylaş, herkes kendi bilgisini girsin.' if tr else 'Your draw has been created. Now invite people: share the link or the code and everyone fills in their own details.') }}
+  {{ ui.facts([
+      ('Çekiliş' if tr else 'Draw', draw_name),
+      ('Davet kodu' if tr else 'Invite code', invite_code),
+      ('Çekiliş zamanı' if tr else 'Draw time', draw_date_text or ('Sen başlattığında' if tr else 'When you start it')),
+  ]) }}
+  {{ ui.button(manage_link, 'Çekilişimi yönet' if tr else 'Manage my draw') }}
+  {{ ui.plain_link('Davet linki (bunu paylaş):' if tr else 'Invite link (share this one):', invite_link) }}
+  {{ ui.note('İpucu: çekiliş sayfasından QR kodlu A4 afişi indirip ofise asabilir, hikâye görselini paylaşabilirsin. Çekiliş için en az 3 katılımcı gerekir.' if tr else 'Tip: from the draw page you can download the A4 poster with a QR code for the office, or share the story card. A draw needs at least 3 participants.') }}
+{% endblock %}
+{% block footer %}{{ "Bu e-posta Let's Raffle hesabınla oluşturduğun çekiliş için gönderildi." if tr else "This e-mail was sent for the draw you created with your Let's Raffle account." }}{% endblock %}

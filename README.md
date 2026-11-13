@@ -85,6 +85,18 @@ The application uses environment variables loaded from `.env` file. Key settings
 - `DATABASE_POOL_SIZE` - Connection pool size
 - `DATABASE_MAX_OVERFLOW` - Max overflow connections
 
+## E-mails
+
+| When | Who | Template |
+|---|---|---|
+| Names are drawn | every participant | `email-template-{tr,en}.html` |
+| Someone joins a draw | that participant | `join-confirmation.html` |
+| An invite draw is created | the organizer | `draw-created.html` |
+| 24 hours before a scheduled draw | the organizer | `draw-reminder.html` |
+| Password reset requested | the user | `reset-password-template-{tr,en}.html` |
+
+All of them are sent from Celery tasks, so a mail problem never fails the request that caused it.
+
 ## Announcement e-mails
 
 Campaign e-mails (for example the 2027 launch announcement) are sent with a script, never automatically:

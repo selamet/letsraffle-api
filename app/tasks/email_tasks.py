@@ -45,3 +45,35 @@ def send_password_reset_email_task(
     except Exception as e:
         logger.error(f"Unexpected error in send_password_reset_email_task: {e}", exc_info=True)
         return {"status": "error", "message": str(e)}
+
+
+def _run_draw_email(action) -> Dict[str, Any]:
+    """Run a draw e-mail action with its own session; e-mail problems never break draw flows."""
+    from app.models.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        return {"status": "success", "sent": action(db)}
+    except Exception as exc:
+        logger.error(f"Draw e-mail task failed: {exc}", exc_info=True)
+        return {"status": "error", "message": str(exc)}
+    finally:
+        db.close()
+
+
+@app.task(name='send_join_confirmation_email_task')
+def send_join_confirmation_email_task(participant_id: int) -> Dict[str, Any]:
+    from app.services.draw_email_service import send_join_confirmation
+    return _run_draw_email(lambda db: send_join_confirmation(db, participant_id))
+
+
+@app.task(name='send_draw_created_email_task')
+def send_draw_created_email_task(draw_id: int) -> Dict[str, Any]:
+    from app.services.draw_email_service import send_draw_created
+    return _run_draw_email(lambda db: send_draw_created(db, draw_id))
+
+
+@app.task(name='send_draw_reminder_emails_task')
+def send_draw_reminder_emails_task() -> Dict[str, Any]:
+    from app.services.draw_email_service import send_due_reminder_emails
+    return _run_draw_email(lambda db: send_due_reminder_emails(db))

@@ -145,6 +145,10 @@ async def create_dynamic_draw(
         db.add(organizer_participant)
         db.commit()
         db.refresh(organizer_participant)
+
+        from app.tasks.push_tasks import enqueue
+        from app.tasks.email_tasks import send_draw_created_email_task
+        enqueue(send_draw_created_email_task, new_draw.id)
         
         logger.info(
             f"Dynamic draw created: draw_id={new_draw.id}, "
@@ -311,6 +315,8 @@ async def join_draw(
             draw.id,
             public_display_name(new_participant.first_name, new_participant.last_name)
         )
+        from app.tasks.email_tasks import send_join_confirmation_email_task
+        enqueue(send_join_confirmation_email_task, new_participant.id)
 
         logger.info(
             f"Participant joined draw: draw_id={draw.id}, "

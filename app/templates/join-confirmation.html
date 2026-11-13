@@ -1,0 +1,19 @@
+{% extends "_email_base.html" %}
+{% import "_email_parts.html" as ui %}
+{% set tr = lang == 'tr' %}
+{% block title %}{{ 'Çekilişe katıldın' if tr else "You're in" }}{% endblock %}
+{% block preheader %}{{ 'Listeye eklendin. Çekiliş yapıldığında sonucun bu adrese gelecek.' if tr else "You're on the list. Your match will be sent to this address when the names are drawn." }}{% endblock %}
+{% block hero_script %}{{ 'Listedesin!' if tr else "You're in!" }}{% endblock %}
+{% block hero_image %}santa-wave.png{% endblock %}
+{% block content %}
+  {{ ui.heading(('Sevgili ' ~ participant_name ~ ',') if tr else ('Dear ' ~ participant_name ~ ',')) }}
+  {{ ui.lead('Noel Baba adını listeye yazdı. Çekilişe katılımın tamam!' if tr else 'Santa has written your name on the list. You have joined the draw!') }}
+  {{ ui.facts([
+      ('Çekiliş' if tr else 'Draw', draw_name),
+      ('Çekiliş zamanı' if tr else 'Draw time', draw_date_text or ('Organizatör başlattığında' if tr else 'When the organizer starts it')),
+  ]) }}
+  {{ ui.button(status_link, 'Çekiliş durumunu gör' if tr else 'See the draw status') }}
+  {{ ui.note('Çekiliş yapıldığında kime hediye alacağın bu adrese gönderilecek. Gelmezse spam klasörüne de bak.' if tr else 'When the names are drawn, we will e-mail you who you are buying for. If it does not arrive, check your spam folder.') }}
+  {{ ui.plain_link('Buton çalışmıyorsa bu bağlantıyı tarayıcına yapıştır:' if tr else 'If the button does not work, paste this link into your browser:', status_link) }}
+{% endblock %}
+{% block footer %}{{ "Bu e-postayı bir Let's Raffle çekilişine bu adresle katılım yapıldığı için aldın. Sen katılmadıysan görmezden gelebilirsin." if tr else "You are receiving this e-mail because this address joined a Let's Raffle draw. If that was not you, you can ignore it." }}{% endblock %}

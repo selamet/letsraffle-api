@@ -48,6 +48,10 @@ app.conf.update(
             'task': 'send_draw_reminders_task',
             'schedule': crontab(minute=30)  # Every hour at minute 30
         },
+        'send_draw_reminder_emails': {
+            'task': 'send_draw_reminder_emails_task',
+            'schedule': crontab(minute=35)  # Every hour at minute 35
+        },
     },
 )
 

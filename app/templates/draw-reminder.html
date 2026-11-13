@@ -1,0 +1,24 @@
+{% extends "_email_base.html" %}
+{% import "_email_parts.html" as ui %}
+{% set tr = lang == 'tr' %}
+{% set enough = participant_count >= 3 %}
+{% block title %}{{ 'Çekilişin yarın' if tr else 'Your draw is tomorrow' }}{% endblock %}
+{% block preheader %}{{ ('Şu an ' ~ participant_count ~ ' kişi katıldı.') if tr else (participant_count ~ ' people have joined so far.') }}{% endblock %}
+{% block hero_script %}{{ 'Az kaldı!' if tr else 'Almost time!' }}{% endblock %}
+{% block hero_image %}santa-thinking.png{% endblock %}
+{% block hero_width %}140{% endblock %}
+{% block content %}
+  {{ ui.heading(('Sevgili ' ~ organizer_name ~ ',') if tr else ('Dear ' ~ organizer_name ~ ',')) }}
+  {{ ui.lead('Çekilişin 24 saat içinde yapılacak. Eksik kalan varsa haber vermek için son fırsat.' if tr else 'Your draw takes place within 24 hours. This is the last chance to nudge anyone who has not joined yet.') }}
+  {{ ui.facts([
+      ('Çekiliş' if tr else 'Draw', draw_name),
+      ('Çekiliş zamanı' if tr else 'Draw time', draw_date_text),
+      ('Katılımcı' if tr else 'Participants', (participant_count ~ ' kişi') if tr else (participant_count ~ (' person' if participant_count == 1 else ' people'))),
+  ]) }}
+  {% if not enough %}
+  <p style="margin:12px 0 0 0; padding:12px 16px; background:#fff5f3; border-radius:14px; font-size:14px; font-weight:800; line-height:1.5; text-align:center; color:#b42318;">{{ 'Çekiliş için en az 3 katılımcı gerekiyor. Bu sayıya ulaşılmazsa çekiliş yapılmaz.' if tr else 'A draw needs at least 3 participants. It will not run until that many people have joined.' }}</p>
+  {% endif %}
+  {{ ui.button(manage_link, 'Katılımcıları gör' if tr else 'See who joined', 'red') }}
+  {{ ui.plain_link('Davet linki:' if tr else 'Invite link:', invite_link) }}
+{% endblock %}
+{% block footer %}{{ "Bu e-posta Let's Raffle hesabınla oluşturduğun çekiliş için gönderildi." if tr else "This e-mail was sent for the draw you created with your Let's Raffle account." }}{% endblock %}
