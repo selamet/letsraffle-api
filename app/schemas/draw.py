@@ -4,6 +4,10 @@ from pydantic import BaseModel, EmailStr, Field, field_validator, model_validato
 from app.utils.draw_date import normalize_and_validate_draw_date
 
 
+# The endpoint is public and e-mails every participant, so one request must not
+# be able to send an unbounded number of messages.
+MAX_MANUAL_DRAW_PARTICIPANTS = 100
+
 # Manual Draw Schemas
 
 class ManualDrawParticipant(BaseModel):
@@ -27,7 +31,8 @@ class ManualDrawCreate(BaseModel):
     participants: List[ManualDrawParticipant] = Field(
         ...,
         min_length=3,
-        description="List of participants (minimum 3 required)"
+        max_length=MAX_MANUAL_DRAW_PARTICIPANTS,
+        description="List of participants (minimum 3, maximum 100)"
     )
 
     @field_validator('language')

@@ -283,3 +283,41 @@ class TestJoinDraw:
         
         assert response.status_code == 400
 
+
+
+@pytest.mark.dynamic_draw
+class TestJoinDrawParticipantLimit:
+    """Joining is public, so a draw stops accepting participants once it is full"""
+
+    def test_join_full_draw_rejected(self, client, auth_headers, test_db, monkeypatch):
+        from app.api.v1 import draw as draw_api
+
+        monkeypatch.setattr(draw_api, "MAX_DRAW_PARTICIPANTS", 2)
+
+        create_response = client.post(
+            "/api/v1/draws/dynamic",
+            headers=auth_headers,
+            json={
+                "addressRequired": False,
+                "phoneNumberRequired": False,
+                "participants": [
+                    {"firstName": "Org", "lastName": "Test", "email": "org@test.com"}
+                ],
+            },
+        )
+        invite_code = create_response.json()["inviteCode"]
+
+        def join(email):
+            return client.post(
+                f"/api/v1/draws/join/{invite_code}",
+                json={"firstName": "Guest", "lastName": "Test", "email": email},
+            )
+
+        assert join("first@test.com").status_code == 201
+
+        response = join("second@test.com")
+        assert response.status_code == 400
+        assert response.json()["detail"] == "This draw is full"
+
+        draw = test_db.query(Draw).filter(Draw.invite_code == invite_code).first()
+        assert test_db.query(Participant).filter(Participant.draw_id == draw.id).count() == 2
