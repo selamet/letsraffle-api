@@ -85,6 +85,42 @@ The application uses environment variables loaded from `.env` file. Key settings
 - `DATABASE_POOL_SIZE` - Connection pool size
 - `DATABASE_MAX_OVERFLOW` - Max overflow connections
 
+## E-mails
+
+| When | Who | Template |
+|---|---|---|
+| Names are drawn | every participant | `email-template-{tr,en}.html` |
+| Someone joins a draw | that participant | `join-confirmation.html` |
+| An invite draw is created | the organizer | `draw-created.html` |
+| 24 hours before a scheduled draw | the organizer | `draw-reminder.html` |
+| A scheduled draw cannot run (fewer than 3 participants) | the organizer, once | `draw-not-run.html` |
+| Password reset requested | the user | `reset-password-template-{tr,en}.html` |
+
+All of them are sent from Celery tasks, so a mail problem never fails the request that caused it.
+
+## Push notifications
+
+| When | Who |
+|---|---|
+| Names are drawn | participants |
+| Someone joins | the organizer: right away for the first join, then at most one summary per hour |
+| 24 hours before a scheduled draw | organizer and participants |
+| A scheduled draw cannot run (fewer than 3 participants) | the organizer, once |
+
+## Announcement e-mails
+
+Campaign e-mails (for example the 2027 launch announcement) are sent with a script, never automatically:
+
+```bash
+python -m scripts.send_announcement                      # dry run: recipient counts only
+python -m scripts.send_announcement --to me@example.com  # one test e-mail
+python -m scripts.send_announcement --apply              # send to every registered user
+```
+
+Every e-mail carries a personal unsubscribe link (`/api/v1/email/unsubscribe`) and one-click
+`List-Unsubscribe` headers. Unsubscribed addresses are skipped, and sent addresses are recorded so the
+script can be re-run safely. `API_URL` must be the public URL of the API in production.
+
 ## API Documentation
 
 After running the application:

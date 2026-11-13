@@ -1,0 +1,21 @@
+{% extends "_email_base.html" %}
+{% import "_email_parts.html" as ui %}
+{% set tr = lang == 'tr' %}
+{% block title %}{{ 'Çekiliş yapılamadı' if tr else "Your draw couldn't run" }}{% endblock %}
+{% block preheader %}{{ 'Yeterli katılımcı yok. Davet et ya da tarihi güncelle.' if tr else 'Not enough participants yet. Invite more people or change the date.' }}{% endblock %}
+{% block hero_script %}{{ 'Biraz daha bekliyoruz' if tr else 'Not quite yet' }}{% endblock %}
+{% block hero_image %}santa-thinking.png{% endblock %}
+{% block hero_width %}140{% endblock %}
+{% block content %}
+  {{ ui.heading(('Sevgili ' ~ organizer_name ~ ',') if tr else ('Dear ' ~ organizer_name ~ ',')) }}
+  {{ ui.lead('Çekilişinin zamanı geldi ama yeterli katılımcı olmadığı için yapılamadı. Çekiliş için en az 3 kişi gerekiyor.' if tr else 'It was time for your draw, but it could not run because there are not enough participants. A draw needs at least 3 people.') }}
+  {{ ui.facts([
+      ('Çekiliş' if tr else 'Draw', draw_name),
+      ('Planlanan zaman' if tr else 'Scheduled for', draw_date_text),
+      ('Katılımcı' if tr else 'Participants', (participant_count ~ ' kişi') if tr else (participant_count ~ (' person' if participant_count == 1 else ' people'))),
+  ]) }}
+  {{ ui.button(manage_link, 'Çekilişimi yönet' if tr else 'Manage my draw', 'red') }}
+  {{ ui.note('Üçüncü kişi katıldığında çekiliş bir sonraki saat başında kendiliğinden yapılır. İstersen çekiliş sayfasından yeni bir tarih de seçebilirsin.' if tr else 'As soon as a third person joins, the draw runs by itself at the top of the next hour. You can also pick a new date on the draw page.') }}
+  {{ ui.plain_link('Davet linki:' if tr else 'Invite link:', invite_link) }}
+{% endblock %}
+{% block footer %}{{ "Bu e-posta Let's Raffle hesabınla oluşturduğun çekiliş için gönderildi." if tr else "This e-mail was sent for the draw you created with your Let's Raffle account." }}{% endblock %}

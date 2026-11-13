@@ -71,6 +71,8 @@ def mock_celery_tasks(monkeypatch):
     monkeypatch.setattr('app.tasks.email_tasks.send_password_reset_email_task.delay', mock_delay)
     monkeypatch.setattr('app.tasks.push_tasks.send_match_revealed_push_task.delay', mock_delay)
     monkeypatch.setattr('app.tasks.push_tasks.send_participant_joined_push_task.delay', mock_delay)
+    monkeypatch.setattr('app.tasks.email_tasks.send_join_confirmation_email_task.delay', mock_delay)
+    monkeypatch.setattr('app.tasks.email_tasks.send_draw_created_email_task.delay', mock_delay)
 
 
 @pytest.fixture(scope="function")

@@ -40,6 +40,12 @@ class Draw(BaseModel):
     language = Column(String(2), default=Language.TR.value, nullable=False)
     # Set once the "draw is tomorrow" push has been sent.
     reminder_sent_at = Column(DateTime(timezone=True), nullable=True)
+    # Set once the "draw is tomorrow" e-mail has been sent to the organizer.
+    reminder_email_sent_at = Column(DateTime(timezone=True), nullable=True)
+    # When the organizer was last told about new participants; joins after it wait for the next digest.
+    join_push_sent_at = Column(DateTime(timezone=True), nullable=True)
+    # Set once the organizer has been told the scheduled draw could not run (too few participants).
+    not_run_notified_at = Column(DateTime(timezone=True), nullable=True)
 
     participants = relationship("Participant", back_populates="draw", cascade="all, delete-orphan")
 

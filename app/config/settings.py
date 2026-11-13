@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # CORS Settings
     cors_origins: List[str] = ["*"]
     frontend_url: str = "http://localhost:5173"
+    # Public base URL of this API; used for links in e-mails that point back at the API (unsubscribe).
+    api_url: str = "http://localhost:8000"
+    app_store_url: str = "https://apps.apple.com/app/id6834004682"
     
     # PostgreSQL Connection Details
     postgres_host: str = "localhost"

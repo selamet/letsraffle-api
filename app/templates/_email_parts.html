@@ -1,0 +1,40 @@
+{# Shared building blocks for the transactional e-mails. #}
+{% macro heading(text) %}
+  <p class="display" style="margin:0 0 12px 0; font-family:'Fraunces',Georgia,serif; font-weight:900; font-size:26px; line-height:1.2; color:#9b1418; text-align:center;">{{ text }}</p>
+{% endmacro %}
+
+{% macro lead(text) %}
+  <p style="margin:0 0 16px 0; font-size:16px; line-height:1.6; text-align:center; color:#3a2626;">{{ text }}</p>
+{% endmacro %}
+
+{# rows: list of (label, value) pairs; rows with an empty value are skipped #}
+{% macro facts(rows) %}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 6px 0; background:#fff3dc; border-radius:16px;">
+    {% for label, value in rows if value %}
+    <tr>
+      <td style="padding:{{ '14px' if loop.first else '8px' }} 18px {{ '14px' if loop.last else '0' }} 18px; font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;">
+        <span style="display:block; font-size:11px; font-weight:900; letter-spacing:2px; color:#b8892b;">{{ label | upper }}</span>
+        <span style="display:block; font-size:17px; font-weight:900; line-height:1.4; color:#7a0f14;">{{ value }}</span>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+{% endmacro %}
+
+{% macro button(href, text, tone='gold') %}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" class="cta" style="padding:14px 0 4px 0;">
+    {% if tone == 'red' %}
+    <a href="{{ href }}" style="display:inline-block; background:#b91c1c; background-image:linear-gradient(180deg,#d0282f,#a3171c); color:#fffbf5; font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif; font-size:18px; font-weight:900; line-height:1; padding:19px 34px; border-radius:18px; border-bottom:5px solid #6e0d12;">{{ text }}</a>
+    {% else %}
+    <a href="{{ href }}" style="display:inline-block; background:#e6b94a; background-image:linear-gradient(180deg,#f8e09a,#e6b94a); color:#5a1a00; font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif; font-size:18px; font-weight:900; line-height:1; padding:19px 34px; border-radius:18px; border-bottom:5px solid #b8892b;">{{ text }}</a>
+    {% endif %}
+  </td></tr></table>
+{% endmacro %}
+
+{% macro note(text) %}
+  <p style="margin:16px 0 0 0; padding:12px 16px; background:#fff3dc; border-radius:14px; font-size:13px; line-height:1.5; text-align:center; color:#7a5a2a;">{{ text }}</p>
+{% endmacro %}
+
+{% macro plain_link(label, href) %}
+  <p style="margin:14px 0 0 0; font-size:12px; line-height:1.5; text-align:center; color:#8a6f6f;">{{ label }}<br><a href="{{ href }}" style="color:#9b1418; word-break:break-all;">{{ href }}</a></p>
+{% endmacro %}

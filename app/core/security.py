@@ -124,3 +124,32 @@ def decode_participant_token(token: str) -> Optional[dict]:
     if payload.get("type") != PARTICIPANT_TOKEN_TYPE or not isinstance(payload.get("pid"), int):
         return None
     return payload
+
+
+UNSUBSCRIBE_TOKEN_TYPE = "unsubscribe"
+
+
+def create_unsubscribe_token(email: str, language: str = "TR") -> str:
+    """
+    Create the token carried by the unsubscribe link of announcement e-mails.
+
+    It never expires: an old e-mail must still be able to opt its recipient out.
+    """
+    payload = {
+        "sub": email.strip().lower(),
+        "lang": "en" if (language or "").upper() == "EN" else "tr",
+        "type": UNSUBSCRIBE_TOKEN_TYPE,
+    }
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
+
+def decode_unsubscribe_token(token: str) -> Optional[dict]:
+    """Decode an unsubscribe token into {"email", "lang"}; None if invalid or of another type."""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    except InvalidTokenError:
+        return None
+    email = payload.get("sub")
+    if payload.get("type") != UNSUBSCRIBE_TOKEN_TYPE or not isinstance(email, str) or "@" not in email:
+        return None
+    return {"email": email, "lang": "en" if payload.get("lang") == "en" else "tr"}
