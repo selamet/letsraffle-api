@@ -8,6 +8,10 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 from app.config import settings
 
+ACCESS_TOKEN_TYPE = "access"
+RESET_TOKEN_TYPE = "reset"
+RESET_TOKEN_EXPIRE_HOURS = 1
+
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """
@@ -29,7 +33,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
     
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "type": ACCESS_TOKEN_TYPE})
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     
     return encoded_jwt
@@ -39,17 +43,46 @@ def decode_access_token(token: str) -> Optional[dict]:
     """
     Decode and verify a JWT access token
     
+    Every token the API issues is signed with the same key, so the type is what
+    keeps a refresh, reset, participant or unsubscribe token from authenticating
+    a request.
+    
     Args:
         token: JWT token to decode
         
     Returns:
-        Decoded token data or None if invalid
+        Decoded token data or None if invalid or of another type
     """
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-        return payload
     except InvalidTokenError:
         return None
+    if payload.get("type") != ACCESS_TOKEN_TYPE:
+        return None
+    return payload
+
+
+def create_reset_token(email: str) -> str:
+    """Create the short-lived token carried by the password reset link."""
+    from datetime import timezone
+
+    payload = {
+        "sub": email,
+        "type": RESET_TOKEN_TYPE,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=RESET_TOKEN_EXPIRE_HOURS),
+    }
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
+
+def decode_reset_token(token: str) -> Optional[dict]:
+    """Decode a password reset token; returns None if invalid or of another type."""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    except InvalidTokenError:
+        return None
+    if payload.get("type") != RESET_TOKEN_TYPE:
+        return None
+    return payload
 
 
 def create_refresh_token(data: dict) -> str:

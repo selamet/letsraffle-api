@@ -15,9 +15,8 @@ from app.core import apple, google
 from app.schemas.user import UserResponse
 from app.models.draw import Draw
 from app.models.device import Device
-from app.core.security import create_access_token, create_refresh_token, decode_refresh_token, decode_access_token
+from app.core.security import create_access_token, create_refresh_token, decode_refresh_token, create_reset_token, decode_reset_token
 from app.tasks.email_tasks import send_password_reset_email_task
-from datetime import timedelta
 
 router = APIRouter()
 
@@ -169,10 +168,7 @@ async def forgot_password(
     if not user:
         return {"message": "If email exists, password reset instructions have been sent."}
     
-    reset_token = create_access_token(
-        data={"sub": user.email, "type": "reset"},
-        expires_delta=timedelta(hours=1)
-    )
+    reset_token = create_reset_token(user.email)
     
     send_password_reset_email_task.delay(user.email, reset_token, request.language)
     
@@ -191,9 +187,9 @@ async def reset_password(
         request: Reset password request with token and new password
         db: Database session
     """
-    payload = decode_access_token(request.token)
+    payload = decode_reset_token(request.token)
     
-    if not payload or payload.get("type") != "reset":
+    if not payload:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired token"

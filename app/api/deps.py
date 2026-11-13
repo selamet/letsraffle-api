@@ -29,7 +29,7 @@ def get_current_user(
     """
     payload = decode_access_token(token)
 
-    if not payload or payload.get("type") == "participant":
+    if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -77,7 +77,7 @@ def get_current_user_optional(
     try:
         payload = decode_access_token(token)
 
-        if not payload or payload.get("type") == "participant":
+        if not payload:
             return None
         
         email: str = payload.get("sub")
