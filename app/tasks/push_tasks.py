@@ -47,3 +47,13 @@ def send_participant_joined_push_task(draw_id: int, participant_name: str) -> Di
 @app.task(name="send_draw_reminders_task")
 def send_draw_reminders_task() -> Dict[str, Any]:
     return _run(lambda service: service.send_due_reminders())
+
+
+@app.task(name="send_join_digests_task")
+def send_join_digests_task() -> Dict[str, Any]:
+    return _run(lambda service: service.send_join_digests())
+
+
+@app.task(name="send_draw_not_run_push_task")
+def send_draw_not_run_push_task(draw_id: int, participant_count: int) -> Dict[str, Any]:
+    return _run(lambda service: service.notify_draw_not_run(draw_id, participant_count))

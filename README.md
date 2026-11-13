@@ -93,9 +93,19 @@ The application uses environment variables loaded from `.env` file. Key settings
 | Someone joins a draw | that participant | `join-confirmation.html` |
 | An invite draw is created | the organizer | `draw-created.html` |
 | 24 hours before a scheduled draw | the organizer | `draw-reminder.html` |
+| A scheduled draw cannot run (fewer than 3 participants) | the organizer, once | `draw-not-run.html` |
 | Password reset requested | the user | `reset-password-template-{tr,en}.html` |
 
 All of them are sent from Celery tasks, so a mail problem never fails the request that caused it.
+
+## Push notifications
+
+| When | Who |
+|---|---|
+| Names are drawn | participants |
+| Someone joins | the organizer: right away for the first join, then at most one summary per hour |
+| 24 hours before a scheduled draw | organizer and participants |
+| A scheduled draw cannot run (fewer than 3 participants) | the organizer, once |
 
 ## Announcement e-mails
 

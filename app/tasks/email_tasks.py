@@ -77,3 +77,9 @@ def send_draw_created_email_task(draw_id: int) -> Dict[str, Any]:
 def send_draw_reminder_emails_task() -> Dict[str, Any]:
     from app.services.draw_email_service import send_due_reminder_emails
     return _run_draw_email(lambda db: send_due_reminder_emails(db))
+
+
+@app.task(name='send_draw_not_run_email_task')
+def send_draw_not_run_email_task(draw_id: int) -> Dict[str, Any]:
+    from app.services.draw_email_service import send_draw_not_run
+    return _run_draw_email(lambda db: send_draw_not_run(db, draw_id))

@@ -49,6 +49,20 @@ def send_draw_created(db: Session, draw_id: int, service: Optional[EmailService]
     )
 
 
+def send_draw_not_run(db: Session, draw_id: int, service: Optional[EmailService] = None) -> bool:
+    draw = db.query(Draw).filter(Draw.id == draw_id).first()
+    if not draw or not draw.creator_id:
+        return False
+    creator = db.query(User).filter(User.id == draw.creator_id).first()
+    if not creator:
+        return False
+    organizer = _organizer(db, draw)
+    count = db.query(Participant).filter(Participant.draw_id == draw.id).count()
+    return (service or EmailService()).send_draw_not_run_email(
+        draw, creator.email, organizer.first_name if organizer else "", count
+    )
+
+
 def send_due_reminder_emails(db: Session, service: Optional[EmailService] = None, now: Optional[datetime] = None) -> int:
     """E-mail organizers whose draw takes place within 24 hours (once per draw). Returns how many were sent."""
     now = now or datetime.now(timezone.utc)

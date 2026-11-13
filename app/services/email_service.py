@@ -55,6 +55,10 @@ class EmailService:
             'template': 'draw-created.html',
             'subject': {'TR': '🎁 Çekilişin hazır: {name}', 'EN': '🎁 Your draw is ready: {name}'},
         },
+        'draw_not_run': {
+            'template': 'draw-not-run.html',
+            'subject': {'TR': '⏳ Çekiliş yapılamadı: {name}', 'EN': "⏳ Your draw couldn't run: {name}"},
+        },
         'draw_reminder': {
             'template': 'draw-reminder.html',
             'subject': {'TR': '⏰ Çekilişin yarın: {name}', 'EN': '⏰ Your draw is tomorrow: {name}'},
@@ -463,3 +467,10 @@ class EmailService:
             'draw_reminder', draw, organizer_name=organizer_name, participant_count=participant_count
         )
         return self._send_html(email, subject, html, 'Draw reminder')
+
+    def send_draw_not_run_email(self, draw: Draw, email: str, organizer_name: str, participant_count: int) -> bool:
+        """Tell the organizer a scheduled draw could not run because fewer than 3 people joined."""
+        subject, html = self.render_draw_email(
+            'draw_not_run', draw, organizer_name=organizer_name, participant_count=participant_count
+        )
+        return self._send_html(email, subject, html, 'Draw not run')

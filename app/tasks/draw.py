@@ -67,6 +67,7 @@ def execute_scheduled_draw_task(self) -> Dict[str, Any]:
             ).count()
 
             if participant_count < 3:
+                _notify_not_run(db, draw, participant_count, now)
                 skipped_draws.append({
                     "draw_id": draw.id,
                     "reason": "insufficient_participants",
@@ -110,6 +111,25 @@ def execute_scheduled_draw_task(self) -> Dict[str, Any]:
         }
     finally:
         db.close()
+
+
+def _notify_not_run(db: Session, draw: Draw, participant_count: int, now: datetime) -> bool:
+    """
+    Tell the organizer (push + e-mail) that a scheduled draw could not run for lack of participants.
+
+    The draw stays active and is picked up again every hour, so this only happens once per
+    schedule: `not_run_notified_at` is cleared when the organizer picks a new date.
+    """
+    if draw.not_run_notified_at is not None or not draw.creator_id:
+        return False
+    draw.not_run_notified_at = now
+    db.commit()
+
+    from app.tasks.push_tasks import enqueue, send_draw_not_run_push_task
+    from app.tasks.email_tasks import send_draw_not_run_email_task
+    enqueue(send_draw_not_run_push_task, draw.id, participant_count)
+    enqueue(send_draw_not_run_email_task, draw.id)
+    return True
 
 
 @app.task(bind=True, name='process_draw')

@@ -651,6 +651,11 @@ async def update_draw_schedule(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+
+    # a new date re-arms the day-before reminders and the "could not run" notice
+    draw.reminder_sent_at = None
+    draw.reminder_email_sent_at = None
+    draw.not_run_notified_at = None
     
     db.commit()
     
