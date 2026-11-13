@@ -209,3 +209,34 @@ class TestManualDraw:
         assert response.status_code == 422
         assert "language must be either 'TR' or 'EN'" in str(response.json())
 
+
+
+@pytest.mark.manual_draw
+class TestManualDrawParticipantLimit:
+    """The endpoint is public and e-mails every participant, so the list is capped"""
+
+    @staticmethod
+    def _participants(count):
+        return [
+            {"firstName": f"P{i}", "lastName": "Test", "email": f"p{i}@example.com"}
+            for i in range(count)
+        ]
+
+    def test_maximum_participants_accepted(self, client):
+        from app.schemas.draw import MAX_MANUAL_DRAW_PARTICIPANTS
+
+        response = client.post(
+            "/api/v1/draws/manual",
+            json={"participants": self._participants(MAX_MANUAL_DRAW_PARTICIPANTS)},
+        )
+        assert response.status_code == 201
+
+    def test_too_many_participants_rejected(self, client, test_db):
+        from app.schemas.draw import MAX_MANUAL_DRAW_PARTICIPANTS
+
+        response = client.post(
+            "/api/v1/draws/manual",
+            json={"participants": self._participants(MAX_MANUAL_DRAW_PARTICIPANTS + 1)},
+        )
+        assert response.status_code == 422
+        assert test_db.query(Draw).count() == 0

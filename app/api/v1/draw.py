@@ -22,6 +22,9 @@ from app.schemas.draw import MatchResult
 
 logger = logging.getLogger(__name__)
 
+# Joining is public and unverified; a draw cannot grow without bound.
+MAX_DRAW_PARTICIPANTS = 200
+
 router = APIRouter()
 
 
@@ -269,6 +272,13 @@ async def join_draw(
             detail=f"Draw is not active. Current status: {draw.status}"
         )
     
+    participant_count = db.query(Participant).filter(Participant.draw_id == draw.id).count()
+    if participant_count >= MAX_DRAW_PARTICIPANTS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This draw is full"
+        )
+
     # Check email uniqueness in this draw
     existing_participant = db.query(Participant).filter(
         Participant.draw_id == draw.id,
