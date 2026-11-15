@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import participations_table, pager, empty %}
+{% block title %}Kişi ara{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Kişi ara</h1>
+    <p class="lede">Bir isim ya da e-posta yaz; kime çıktığını ve ona kimin çıktığını söyleyelim.</p>
+  </div>
+
+  <form class="filters filters-big" method="get" action="/admin/people">
+    <label>Ad, soyad ya da e-posta
+      <input type="search" name="q" value="{{ q }}" placeholder="örn. ayşe ya da ayse@example.com" autofocus>
+    </label>
+    <button type="submit">Bul</button>
+  </form>
+
+  {% if too_short %}
+    <p class="alert" role="status">En az 2 karakter yaz</p>
+  {% elif q and result.items %}
+    <p class="note">{{ result.total }} kayıt bulundu.</p>
+    {{ participations_table(result.items) }}
+    {{ pager(result, "/admin/people", params) }}
+  {% elif q %}
+    {{ empty("Kimse bulunamadı", "Bu isimde biri ne uslular ne yaramazlar listesinde var.") }}
+  {% endif %}
+{% endblock %}

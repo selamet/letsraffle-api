@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pager, empty %}
+{% block title %}Kullanıcılar{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Kullanıcılar</h1>
+    <p class="lede">{{ result.total }} hesap.</p>
+  </div>
+
+  <form class="filters" method="get" action="/admin/users">
+    <label>Ara
+      <input type="search" name="q" value="{{ q }}" placeholder="e-posta">
+    </label>
+    <button type="submit">Ara</button>
+    {% if q %}<a class="clear" href="/admin/users">Temizle</a>{% endif %}
+  </form>
+
+  {% if result.items %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>E-posta</th><th>Kayıt</th><th>Giriş yöntemi</th><th class="num">Çekiliş</th><th class="num">Cihaz</th></tr></thead>
+        <tbody>
+          {% for row in result.items %}
+            <tr>
+              <td class="muted">{{ row.id }}</td>
+              <td><a href="/admin/users/{{ row.id }}">{{ row.email }}</a></td>
+              <td class="nowrap">{{ row.created_at|istanbul }}</td>
+              <td>
+                {% if row.has_password %}<span class="pill">Şifre</span>{% endif %}
+                {% if row.has_apple %}<span class="pill">Apple</span>{% endif %}
+                {% if row.has_google %}<span class="pill">Google</span>{% endif %}
+              </td>
+              <td class="num">{{ row.draw_count }}</td>
+              <td class="num">{{ row.device_count }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {{ pager(result, "/admin/users", params) }}
+  {% else %}
+    {{ empty("Böyle bir kullanıcı çıkmadı", "Yaramazlar listesinde bile yok.") }}
+  {% endif %}
+{% endblock %}
