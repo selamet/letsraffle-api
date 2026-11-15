@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Giriş · Let's Raffle</title>
+  <link rel="stylesheet" href="/admin/static/admin.css">
+</head>
+<body class="login-body">
+  <main class="login-card">
+    <h1>Noel Baba'nın Atölyesi</h1>
+    <p class="login-lede">Burası sadece baş elfe açık. Kimliğini göster.</p>
+    {% if error %}<p class="alert" role="alert">{{ error }}</p>{% endif %}
+    <form method="post" action="/admin/login">
+      <label for="email">E-posta</label>
+      <input id="email" name="email" type="email" value="{{ email or '' }}" autocomplete="username" required autofocus>
+      <label for="password">Şifre</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <button type="submit">İçeri gir</button>
+    </form>
+  </main>
+</body>
+</html>

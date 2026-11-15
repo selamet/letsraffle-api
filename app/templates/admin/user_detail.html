@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% from "_macros.html" import draws_table, participations_table, empty %}
+{% block title %}{{ u.user.email }}{% endblock %}
+{% block content %}
+  <p class="crumb"><a href="/admin/users">← Kullanıcılar</a></p>
+  <div class="page-head">
+    <h1 class="break">{{ u.user.email }}</h1>
+    <p class="lede">
+      {{ u.user.created_at|istanbul }} tarihinde kaydoldu ·
+      {% if u.user.password %}<span class="pill">Şifre</span>{% endif %}
+      {% if u.user.has_apple %}<span class="pill">Apple</span>{% endif %}
+      {% if u.user.has_google %}<span class="pill">Google</span>{% endif %}
+    </p>
+  </div>
+
+  <section class="panel">
+    <h2>Açtığı çekilişler <span class="count">{{ u.draws|length }}</span></h2>
+    {% if u.draws %}
+      {{ draws_table(u.draws) }}
+    {% else %}
+      {{ empty("Hiç çekiliş açmamış", "Belki bu yıl cesaretini toplar.") }}
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2>Katıldığı çekilişler <span class="count">{{ u.participations|length }}</span></h2>
+    <p class="note">Aynı e-postayla katılımcı olduğu çekilişler.</p>
+    {% if u.participations %}
+      {{ participations_table(u.participations) }}
+    {% else %}
+      {{ empty("Bu e-postayla hiçbir çekilişe katılmamış") }}
+    {% endif %}
+  </section>
+{% endblock %}

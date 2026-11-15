@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, person, organizer, empty %}
+{% block title %}Çekiliş #{{ d.draw.id }}{% endblock %}
+{% block content %}
+  <p class="crumb"><a href="/admin/draws">← Çekilişler</a></p>
+  <div class="page-head">
+    <h1>Çekiliş #{{ d.draw.id }} {{ status_badge(d.draw.status) }}</h1>
+    <p class="lede">{{ organizer(d.draw.creator_id, d.creator_email) }} tarafından {{ d.draw.created_at|istanbul }} tarihinde açıldı.</p>
+  </div>
+
+  <section class="panel">
+    <h2>Künye</h2>
+    <dl class="facts">
+      <div><dt>Tip</dt><dd>{{ TYPE_TR.get(d.draw.draw_type, d.draw.draw_type) }}</dd></div>
+      <div><dt>Dil</dt><dd>{{ d.draw.language }}</dd></div>
+      <div><dt>Çekiliş tarihi</dt><dd>{{ d.draw.draw_date|istanbul }}</dd></div>
+      <div><dt>Davet kodu</dt><dd>{% if d.draw.invite_code %}<code>{{ d.draw.invite_code }}</code>{% else %}—{% endif %}</dd></div>
+      <div><dt>Adres isteniyor</dt><dd>{{ "Evet" if d.draw.require_address else "Hayır" }}</dd></div>
+      <div><dt>Telefon isteniyor</dt><dd>{{ "Evet" if d.draw.require_phone else "Hayır" }}</dd></div>
+      <div><dt>Son güncelleme</dt><dd>{{ d.draw.updated_at|istanbul }}</dd></div>
+    </dl>
+    <h3>Bildirimler</h3>
+    <dl class="facts">
+      <div><dt>Hatırlatma bildirimi</dt><dd>{{ d.draw.reminder_sent_at|istanbul }}</dd></div>
+      <div><dt>Hatırlatma e-postası</dt><dd>{{ d.draw.reminder_email_sent_at|istanbul }}</dd></div>
+      <div><dt>Katılım özeti</dt><dd>{{ d.draw.join_push_sent_at|istanbul }}</dd></div>
+      <div><dt>"Çekiliş yapılamadı" uyarısı</dt><dd>{{ d.draw.not_run_notified_at|istanbul }}</dd></div>
+    </dl>
+  </section>
+
+  <section class="panel">
+    <h2>Kim kime çıktı?</h2>
+    {% if d.matches %}
+      <ul class="tags">
+        {% for match in d.matches %}
+          <li class="tag" style="--i: {{ loop.index0 }}">
+            <span class="tag-from">{{ person(match.giver) }}</span>
+            <span class="tag-arrow" aria-label="hediye alıyor:">
+              <svg viewBox="0 0 48 16" aria-hidden="true"><path d="M1 8h42M36 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <span class="tag-to">{{ person(match.receiver) }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      {{ empty("Henüz çekiliş yapılmadı", "İsimler hâlâ şapkanın içinde bekliyor.") }}
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2>Katılımcılar <span class="count">{{ d.participants|length }}</span></h2>
+    {% if d.participants %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ad</th><th>E-posta</th><th>Telefon</th><th>Adres</th><th>Katıldı</th></tr></thead>
+          <tbody>
+            {% for p in d.participants %}
+              <tr>
+                <td>{{ person(p) }}</td>
+                <td><a href="/admin/people?{{ {'q': p.email}|urlencode }}">{{ p.email }}</a></td>
+                <td class="nowrap">{{ p.phone or "—" }}</td>
+                <td class="address">{{ p.address or "—" }}</td>
+                <td class="nowrap">{{ p.created_at|istanbul }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      {{ empty("Kimse katılmamış", "Davetiyeler yolda olabilir.") }}
+    {% endif %}
+  </section>
+{% endblock %}

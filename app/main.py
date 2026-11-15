@@ -8,7 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import time
 import logging
+from pathlib import Path
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from app.config import settings
+from app.core.admin_auth import AdminGuardMiddleware, AdminLoginRequired
 from app.models import init_db
 
 logger = logging.getLogger(__name__)
@@ -88,6 +92,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Added after CORS so it wraps it: admin responses must never carry CORS headers.
+app.add_middleware(AdminGuardMiddleware)
+
+
+@app.exception_handler(AdminLoginRequired)
+async def admin_login_required(request, exc):
+    return RedirectResponse("/admin/login", status_code=303)
+
 
 @app.get("/", tags=["General"])
 async def root():
@@ -137,6 +149,15 @@ app.include_router(draw.router, prefix=f"{API_PREFIX}", tags=["Draw"])
 app.include_router(participant.router, prefix=f"{API_PREFIX}", tags=["Participant"])
 app.include_router(device.router, prefix=f"{API_PREFIX}", tags=["Device"])
 app.include_router(email.router, prefix=f"{API_PREFIX}", tags=["Email"])
+
+# Admin panel (read-only, server-rendered). Static files first so the router cannot shadow them.
+from app.api import admin
+app.mount(
+    "/admin/static",
+    StaticFiles(directory=str(Path(__file__).parent / "static" / "admin")),
+    name="admin-static",
+)
+app.include_router(admin.router, prefix="/admin")
 
 
 if __name__ == "__main__":

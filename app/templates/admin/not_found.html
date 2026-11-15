@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty %}
+{% block title %}Bulunamadı{% endblock %}
+{% block content %}
+  {{ empty(message, "Ren geyikleri her yere baktı, bacadan bile indiler. Yok.") }}
+  <p class="center"><a class="button" href="/admin">Atölyeye dön</a></p>
+{% endblock %}

@@ -138,3 +138,34 @@ def second_auth_headers(second_auth_token):
     """
     return {"Authorization": f"Bearer {second_auth_token}"}
 
+
+
+@pytest.fixture(scope="function")
+def admin_env(monkeypatch):
+    """
+    Turn the admin panel on with known credentials
+    """
+    from app.config import settings
+    from app.core.admin_auth import reset_failures
+
+    monkeypatch.setattr(settings, "admin_email", "admin@example.com")
+    monkeypatch.setattr(settings, "admin_password_hash", User.hash_password("correct-horse-battery"))
+    monkeypatch.setattr(settings, "admin_cookie_secure", False)
+    monkeypatch.setattr(settings, "secret_key", "a-real-secret-key-for-admin-tests")
+    reset_failures()
+    yield
+    reset_failures()
+
+
+@pytest.fixture(scope="function")
+def admin_client(client, admin_env):
+    """
+    Test client that is logged in to the admin panel
+    """
+    response = client.post(
+        "/admin/login",
+        data={"email": "admin@example.com", "password": "correct-horse-battery"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    return client
