@@ -91,6 +91,13 @@ class Settings(BaseSettings):
     aws_secret_access_key: Optional[str] = None
     ses_from_email: str = "noreply@example.com"
     
+    # Admin panel (read-only). Off unless both the e-mail and the bcrypt hash are set.
+    admin_email: Optional[str] = None
+    admin_password_hash: Optional[str] = None
+    admin_session_hours: int = 12
+    # Only turn off for local http development.
+    admin_cookie_secure: bool = True
+
     @property
     def database_url(self) -> str:
         """Generate database URL from PostgreSQL connection details"""

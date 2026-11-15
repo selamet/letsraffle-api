@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "_macros.html" import draws_table, empty %}
+{% block title %}Özet{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Atölyede neler oluyor?</h1>
+    <p class="lede">Elfler saydı, liste iki kez kontrol edildi.</p>
+  </div>
+
+  <section class="stats" aria-label="Toplamlar">
+    <a class="stat stat-red" href="/admin/draws"><span class="stat-num">{{ o.draws_total }}</span><span class="stat-label">çekiliş</span></a>
+    <a class="stat stat-green" href="/admin/people"><span class="stat-num">{{ o.participants }}</span><span class="stat-label">katılımcı</span></a>
+    <a class="stat stat-gold" href="/admin/users"><span class="stat-num">{{ o.users }}</span><span class="stat-label">kullanıcı</span></a>
+    <div class="stat stat-plain"><span class="stat-num">{{ o.devices }}</span><span class="stat-label">cihaz</span></div>
+    <div class="stat stat-plain"><span class="stat-num">{{ o.unsubscribes }}</span><span class="stat-label">e-postadan çıkan</span></div>
+  </section>
+
+  <section class="panel">
+    <h2>Duruma göre çekilişler</h2>
+    <div class="status-row">
+      {% for status, label in STATUS_TR.items() %}
+        <a class="status-chip badge-{{ status }}" href="/admin/draws?status={{ status }}">
+          <strong>{{ o.draws_by_status.get(status, 0) }}</strong> {{ label }}
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Son 30 gün</h2>
+      <p class="legend"><span class="key key-draws"></span>çekiliş <span class="key key-people"></span>katılımcı</p>
+    </div>
+    <div class="chart" role="img" aria-label="Son 30 günde günlük çekiliş ve katılımcı sayıları">
+      {% for day in o.daily %}
+        <div class="chart-day" title="{{ day.day|istanbul_day }}: {{ day.draws }} çekiliş, {{ day.participants }} katılımcı">
+          <div class="bars">
+            <span class="bar bar-draws" style="height: {{ (day.draws / peak * 100)|round(1) }}%"></span>
+            <span class="bar bar-people" style="height: {{ (day.participants / peak * 100)|round(1) }}%"></span>
+          </div>
+          {% if loop.first or loop.last or loop.index0 % 5 == 0 %}<span class="chart-label">{{ day.day|istanbul_day }}</span>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+    <details class="chart-data">
+      <summary>Sayıları tablo olarak göster</summary>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Gün</th><th class="num">Çekiliş</th><th class="num">Katılımcı</th></tr></thead>
+          <tbody>
+            {% for day in o.daily|reverse %}
+              <tr><td>{{ day.day|istanbul_day }}</td><td class="num">{{ day.draws }}</td><td class="num">{{ day.participants }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>En yeni çekilişler</h2>
+      <a href="/admin/draws">Hepsini gör →</a>
+    </div>
+    {% if o.latest_draws %}
+      {{ draws_table(o.latest_draws) }}
+    {% else %}
+      {{ empty("Henüz hiç çekiliş yok", "Atölye sessiz. Elfler kakao içiyor.") }}
+    {% endif %}
+  </section>
+{% endblock %}

@@ -38,6 +38,25 @@ docker-compose up -d
 # API Docs: http://localhost:8000/docs
 ```
 
+## Admin Panel
+
+A read-only panel at `/admin` shows draws, participants, match results and users.
+It is switched off (every `/admin` URL answers 404) until both settings below are set
+and `SECRET_KEY` has been changed from its default value.
+
+```bash
+# 1. Print the .env line for your password
+python -m scripts.hash_admin_password
+
+# 2. Add to .env (keep the single quotes around the hash)
+ADMIN_EMAIL=you@example.com
+ADMIN_PASSWORD_HASH='$2b$12$...'
+```
+
+- Locally over plain http also set `ADMIN_COOKIE_SECURE=false`, otherwise the browser drops the session cookie.
+- In production the reverse proxy must forward `/admin` (including `/admin/static`) to the app, not only `/api`.
+- The panel never writes to the database, and its session cannot be used against the user API.
+
 ## Prerequisites
 
 - Docker & Docker Compose

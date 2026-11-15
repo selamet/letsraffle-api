@@ -1,0 +1,82 @@
+{% macro pager(result, base_url, params) %}
+  {% if result.has_prev or result.has_next %}
+  <nav class="pager" aria-label="Sayfalar">
+    {% if result.has_prev %}
+      <a class="pager-link" href="{{ base_url }}?{{ dict(params, page=result.page - 1)|urlencode }}">← Önceki</a>
+    {% else %}<span></span>{% endif %}
+    <span class="pager-info">Sayfa {{ result.page }} · toplam {{ result.total }}</span>
+    {% if result.has_next %}
+      <a class="pager-link" href="{{ base_url }}?{{ dict(params, page=result.page + 1)|urlencode }}">Sonraki →</a>
+    {% else %}<span></span>{% endif %}
+  </nav>
+  {% endif %}
+{% endmacro %}
+
+{% macro status_badge(status) %}
+  <span class="badge badge-{{ status }}">{{ STATUS_TR.get(status, status) }}</span>
+{% endmacro %}
+
+{% macro person(p) %}
+  {% if p %}<a class="person" href="/admin/people?{{ {'q': p.email}|urlencode }}">{{ p.first_name }} {{ p.last_name }}</a>{% else %}<span class="muted">—</span>{% endif %}
+{% endmacro %}
+
+{% macro organizer(creator_id, creator_email) %}
+  {% if creator_id and creator_email %}<a href="/admin/users/{{ creator_id }}">{{ creator_email }}</a>{% else %}<span class="guest">misafir</span>{% endif %}
+{% endmacro %}
+
+{% macro draws_table(rows) %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Oluşturuldu</th><th>Organizatör</th><th>Tip</th><th>Durum</th>
+          <th>Çekiliş tarihi</th><th class="num">Katılımcı</th><th>Dil</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td><a class="id-link" href="/admin/draws/{{ row.id }}">#{{ row.id }}</a></td>
+          <td class="nowrap">{{ row.created_at|istanbul }}</td>
+          <td>{{ organizer(row.creator_id, row.creator_email) }}</td>
+          <td>{{ TYPE_TR.get(row.draw_type, row.draw_type) }}</td>
+          <td>{{ status_badge(row.status) }}</td>
+          <td class="nowrap">{{ row.draw_date|istanbul }}</td>
+          <td class="num">{{ row.participant_count }}</td>
+          <td>{{ row.language }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endmacro %}
+
+{% macro participations_table(rows) %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Kişi</th><th>E-posta</th><th>Çekiliş</th><th>Durum</th><th>Kime çıktı</th><th>Ona kim çıktı</th></tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ person(row.participant) }}</td>
+          <td>{{ row.participant.email }}</td>
+          <td class="nowrap"><a class="id-link" href="/admin/draws/{{ row.draw_id }}">#{{ row.draw_id }}</a> <span class="muted">{{ row.draw_created_at|istanbul }}</span></td>
+          <td>{{ status_badge(row.draw_status) }}</td>
+          <td>{{ person(row.drew) }}</td>
+          <td>{{ person(row.drawn_by) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endmacro %}
+
+{% macro empty(title, hint="") %}
+  <div class="empty">
+    <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M8 26h48v30H8z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M4 16h56v10H4z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M32 16v40M32 16c-6-12-18-8-12 0M32 16c6-12 18-8 12 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+    <p class="empty-title">{{ title }}</p>
+    {% if hint %}<p class="empty-hint">{{ hint }}</p>{% endif %}
+  </div>
+{% endmacro %}

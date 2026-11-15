@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}Atölye{% endblock %} · Let's Raffle</title>
+  <link rel="stylesheet" href="/admin/static/admin.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin">Noel Baba'nın Atölyesi</a>
+    <nav class="nav" aria-label="Ana menü">
+      <a href="/admin" {% if section == "overview" %}aria-current="page"{% endif %}>Özet</a>
+      <a href="/admin/draws" {% if section == "draws" %}aria-current="page"{% endif %}>Çekilişler</a>
+      <a href="/admin/users" {% if section == "users" %}aria-current="page"{% endif %}>Kullanıcılar</a>
+      <a href="/admin/people" {% if section == "people" %}aria-current="page"{% endif %}>Kişi ara</a>
+    </nav>
+    <form class="logout" method="post" action="/admin/logout">
+      <button type="submit">Çıkış</button>
+    </form>
+  </header>
+  <main class="page">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

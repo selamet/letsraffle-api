@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_macros.html" import draws_table, pager, empty %}
+{% block title %}Çekilişler{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <h1>Çekilişler</h1>
+    <p class="lede">{{ result.total }} çekiliş listede.</p>
+  </div>
+
+  <form class="filters" method="get" action="/admin/draws">
+    <label>Ara
+      <input type="search" name="q" value="{{ filters.q }}" placeholder="organizatör e-postası, davet kodu ya da #no">
+    </label>
+    <label>Durum
+      <select name="status">
+        <option value="">Hepsi</option>
+        {% for value, label in STATUS_TR.items() %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Tip
+      <select name="type">
+        <option value="">Hepsi</option>
+        {% for value, label in TYPE_TR.items() %}<option value="{{ value }}" {% if filters.type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Dil
+      <select name="language">
+        <option value="">Hepsi</option>
+        {% for value in ["TR", "EN"] %}<option value="{{ value }}" {% if filters.language == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+      </select>
+    </label>
+    <button type="submit">Süz</button>
+    {% if params %}<a class="clear" href="/admin/draws">Temizle</a>{% endif %}
+  </form>
+
+  {% if result.items %}
+    {{ draws_table(result.items) }}
+    {{ pager(result, "/admin/draws", params) }}
+  {% else %}
+    {{ empty("Buna uyan çekiliş yok", "Çuvalın dibine kadar baktık.") }}
+  {% endif %}
+{% endblock %}
