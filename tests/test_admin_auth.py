@@ -63,9 +63,14 @@ def test_credentials(admin_settings):
 
 
 def test_admin_token_has_no_sub_and_roundtrips(admin_settings):
+    import jwt
+
     token = create_admin_token()
-    assert "sub" not in decode_access_token(token)
+    claims = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    assert "sub" not in claims and claims["type"] == "admin"
     assert is_admin_token(token) is True
+    # The user API must not accept it as an access token.
+    assert decode_access_token(token) is None
 
 
 def test_user_and_participant_tokens_are_not_admin(admin_settings):
