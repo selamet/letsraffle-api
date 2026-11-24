@@ -114,3 +114,10 @@ class TestGoogleSignInEndpoint:
         monkeypatch.setattr(settings, "google_ios_client_id", None)
         response = client.post("/api/v1/auth/google", json={"credential": "anything"})
         assert response.status_code == 503
+
+    def test_new_account_records_the_client(self, client, google_keys, test_db):
+        response = client.post(
+            "/api/v1/auth/google", json={"credential": google_keys()}, headers={"X-Client": "web"}
+        )
+        assert response.status_code == 200
+        assert test_db.query(User).filter(User.email == "ayse@gmail.com").one().source == "web"

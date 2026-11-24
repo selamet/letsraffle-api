@@ -27,6 +27,17 @@
   </section>
 
   <section class="panel">
+    <h2>Kaynağa göre çekilişler</h2>
+    <div class="status-row">
+      {% for source, label in SOURCE_TR.items() %}
+        <a class="status-chip" href="/admin/draws?source={{ source }}">
+          <strong>{{ o.draws_by_source.get(None if source == "none" else source, 0) }}</strong> {{ label }}
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
     <div class="panel-head">
       <h2>Son 30 gün</h2>
       <p class="legend"><span class="key key-draws"></span>çekiliş <span class="key key-people"></span>katılımcı</p>

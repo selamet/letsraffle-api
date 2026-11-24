@@ -51,10 +51,12 @@ def istanbul_day(value) -> str:
 
 STATUS_TR = {"active": "Aktif", "in_progress": "Sürüyor", "completed": "Tamamlandı", "cancelled": "İptal"}
 TYPE_TR = {"manual": "Manuel", "dynamic": "Davetli"}
+# Keys are draw/user `source` values; `none` stands for rows created before the source was recorded.
+SOURCE_TR = {"ios": "iOS", "web": "Web", "unknown": "Bilinmiyor", admin_service.SOURCE_NOT_RECORDED: "Kayıt yok"}
 
 templates.env.filters["istanbul"] = istanbul
 templates.env.filters["istanbul_day"] = istanbul_day
-templates.env.globals.update(STATUS_TR=STATUS_TR, TYPE_TR=TYPE_TR)
+templates.env.globals.update(STATUS_TR=STATUS_TR, TYPE_TR=TYPE_TR, SOURCE_TR=SOURCE_TR)
 
 
 def render(request: Request, name: str, status_code: int = 200, **context) -> HTMLResponse:
@@ -122,12 +124,21 @@ def draws(
     status: str = "",
     type: str = "",
     language: str = "",
+    source: str = "",
     q: str = "",
     page: str = "1",
     db: Session = Depends(get_db),
 ):
-    result = admin_service.list_draws(db, status=status, draw_type=type, language=language, q=q, page=page)
-    filters = {"status": status, "type": type, "language": language, "q": admin_service.clean_query(q)}
+    result = admin_service.list_draws(
+        db, status=status, draw_type=type, language=language, source=source, q=q, page=page
+    )
+    filters = {
+        "status": status,
+        "type": type,
+        "language": language,
+        "source": source if source in SOURCE_TR else "",
+        "q": admin_service.clean_query(q),
+    }
     return render(
         request,
         "draws.html",

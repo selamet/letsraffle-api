@@ -13,6 +13,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import Query, Session, aliased
 
 from app.models import Device, Draw, DrawResult, EmailUnsubscribe, Participant, User
+from app.core.client_source import ClientSource
 from app.models.draw import DrawStatus, DrawType, Language
 
 PAGE_SIZE = 50
@@ -22,6 +23,8 @@ MAX_ID = 2_147_483_647
 OVERVIEW_DAYS = 30
 LATEST_DRAWS = 10
 MIN_PEOPLE_QUERY = 2
+# ?source= value that lists draws created before the source was recorded.
+SOURCE_NOT_RECORDED = "none"
 
 # Turkey has been on a fixed UTC+3 offset since 2016.
 ISTANBUL = timezone(timedelta(hours=3))
@@ -49,6 +52,7 @@ class DrawRow:
     draw_date: Optional[datetime]
     participant_count: int
     language: str
+    source: Optional[str]
 
 
 @dataclass
@@ -63,6 +67,7 @@ class Overview:
     users: int
     draws_total: int
     draws_by_status: Dict[str, int]
+    draws_by_source: Dict[Optional[str], int]  # None = created before the source was recorded
     participants: int
     devices: int
     unsubscribes: int
@@ -94,6 +99,7 @@ class UserRow:
     has_google: bool
     draw_count: int
     device_count: int
+    source: Optional[str]
 
 
 @dataclass
@@ -190,6 +196,7 @@ def _draw_row(row) -> DrawRow:
         draw_date=draw.draw_date,
         participant_count=participant_count,
         language=draw.language,
+        source=draw.source,
     )
 
 
@@ -248,11 +255,13 @@ def get_overview(db: Session, now: Optional[datetime] = None) -> Overview:
             bucket.participants += 1
 
     by_status = dict(db.query(Draw.status, func.count(Draw.id)).group_by(Draw.status).all())
+    by_source = dict(db.query(Draw.source, func.count(Draw.id)).group_by(Draw.source).all())
 
     return Overview(
         users=db.query(func.count(User.id)).scalar() or 0,
         draws_total=sum(by_status.values()),
         draws_by_status=by_status,
+        draws_by_source=by_source,
         participants=db.query(func.count(Participant.id)).scalar() or 0,
         devices=db.query(func.count(Device.id)).scalar() or 0,
         unsubscribes=db.query(func.count(EmailUnsubscribe.id)).scalar() or 0,
@@ -267,6 +276,7 @@ def list_draws(
     status: Optional[str] = None,
     draw_type: Optional[str] = None,
     language: Optional[str] = None,
+    source: Optional[str] = None,
     q: Optional[str] = None,
     page: Union[str, int, None] = 1,
 ) -> Page[DrawRow]:
@@ -281,6 +291,12 @@ def list_draws(
         query = query.filter(Draw.draw_type == draw_type)
     if language:
         query = query.filter(Draw.language == language)
+    if source == SOURCE_NOT_RECORDED:
+        query = query.filter(Draw.source.is_(None))
+    else:
+        source = _enum_value(ClientSource, source)
+        if source:
+            query = query.filter(Draw.source == source)
 
     q = clean_query(q)
     if q:
@@ -361,6 +377,7 @@ def list_users(db: Session, *, q: Optional[str] = None, page: Union[str, int, No
             has_google=user.has_google,
             draw_count=draw_count,
             device_count=device_count,
+            source=user.source,
         )
 
     return _paginate(query, page, build)

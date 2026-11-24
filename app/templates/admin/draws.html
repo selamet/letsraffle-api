@@ -29,6 +29,12 @@
         {% for value in ["TR", "EN"] %}<option value="{{ value }}" {% if filters.language == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
       </select>
     </label>
+    <label>Kaynak
+      <select name="source">
+        <option value="">Hepsi</option>
+        {% for value, label in SOURCE_TR.items() %}<option value="{{ value }}" {% if filters.source == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
     <button type="submit">Süz</button>
     {% if params %}<a class="clear" href="/admin/draws">Temizle</a>{% endif %}
   </form>

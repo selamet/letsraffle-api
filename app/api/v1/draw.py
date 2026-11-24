@@ -3,6 +3,7 @@ from typing import Optional, List
 from app.models import get_db, User
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_user_optional, get_current_user
+from app.core.client_source import get_client_source
 from app.schemas.draw import (
     ManualDrawCreate, ManualDrawResponse,
     DynamicDrawCreate, DynamicDrawResponse,
@@ -32,7 +33,8 @@ router = APIRouter()
 async def create_manual_draw(
         draw_data: ManualDrawCreate,
         db: Session = Depends(get_db),
-        current_user: Optional[User] = Depends(get_current_user_optional)
+        current_user: Optional[User] = Depends(get_current_user_optional),
+        source: str = Depends(get_client_source)
 ):
     """
     Create a manual draw with specified participants.
@@ -56,7 +58,8 @@ async def create_manual_draw(
             require_address=draw_data.address_required,
             require_phone=draw_data.phone_number_required,
             draw_date=None,
-            language=draw_data.language
+            language=draw_data.language,
+            source=source
         )
         db.add(new_draw)
         db.flush()
@@ -68,7 +71,8 @@ async def create_manual_draw(
                 last_name=p.last_name,
                 email=p.email,
                 address=p.address,
-                phone=p.phone
+                phone=p.phone,
+                source=source
             )
             for p in draw_data.participants
         ]
@@ -99,7 +103,8 @@ async def create_manual_draw(
 async def create_dynamic_draw(
     draw_data: DynamicDrawCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    source: str = Depends(get_client_source)
 ):
     """
     Create a dynamic draw with a shareable invite code.
@@ -131,7 +136,8 @@ async def create_dynamic_draw(
             require_phone=draw_data.phone_number_required,
             draw_date=draw_data.draw_date,
             invite_code=invite_code,
-            language=draw_data.language
+            language=draw_data.language,
+            source=source
         )
         db.add(new_draw)
         db.flush()
@@ -143,7 +149,8 @@ async def create_dynamic_draw(
             last_name=organizer.last_name,
             email=organizer.email,
             address=organizer.address,
-            phone=organizer.phone
+            phone=organizer.phone,
+            source=source
         )
         db.add(organizer_participant)
         db.commit()
@@ -233,7 +240,8 @@ async def get_draw_public_info(
 async def join_draw(
     invite_code: str,
     participant_data: ParticipantJoinRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    source: str = Depends(get_client_source)
 ):
     """
     Join a draw using its invite code.
@@ -313,7 +321,8 @@ async def join_draw(
             last_name=participant_data.last_name,
             email=participant_data.email,
             address=participant_data.address,
-            phone=participant_data.phone
+            phone=participant_data.phone,
+            source=source
         )
         db.add(new_participant)
         db.commit()

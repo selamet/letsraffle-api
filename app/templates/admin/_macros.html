@@ -16,6 +16,10 @@
   <span class="badge badge-{{ status }}">{{ STATUS_TR.get(status, status) }}</span>
 {% endmacro %}
 
+{% macro source_label(source) %}
+  {% if source %}<span class="pill">{{ SOURCE_TR.get(source, source) }}</span>{% else %}<span class="muted" title="Kaynak kaydedilmeden önce oluşturuldu">—</span>{% endif %}
+{% endmacro %}
+
 {% macro person(p) %}
   {% if p %}<a class="person" href="/admin/people?{{ {'q': p.email}|urlencode }}">{{ p.first_name }} {{ p.last_name }}</a>{% else %}<span class="muted">—</span>{% endif %}
 {% endmacro %}
@@ -30,7 +34,7 @@
       <thead>
         <tr>
           <th>#</th><th>Oluşturuldu</th><th>Organizatör</th><th>Tip</th><th>Durum</th>
-          <th>Çekiliş tarihi</th><th class="num">Katılımcı</th><th>Dil</th>
+          <th>Çekiliş tarihi</th><th class="num">Katılımcı</th><th>Dil</th><th>Kaynak</th>
         </tr>
       </thead>
       <tbody>
@@ -44,6 +48,7 @@
           <td class="nowrap">{{ row.draw_date|istanbul }}</td>
           <td class="num">{{ row.participant_count }}</td>
           <td>{{ row.language }}</td>
+          <td>{{ source_label(row.source) }}</td>
         </tr>
         {% endfor %}
       </tbody>
