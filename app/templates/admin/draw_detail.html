@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import status_badge, person, organizer, empty %}
+{% from "_macros.html" import status_badge, person, organizer, empty, source_label %}
 {% block title %}Çekiliş #{{ d.draw.id }}{% endblock %}
 {% block content %}
   <p class="crumb"><a href="/admin/draws">← Çekilişler</a></p>
@@ -13,6 +13,7 @@
     <dl class="facts">
       <div><dt>Tip</dt><dd>{{ TYPE_TR.get(d.draw.draw_type, d.draw.draw_type) }}</dd></div>
       <div><dt>Dil</dt><dd>{{ d.draw.language }}</dd></div>
+      <div><dt>Kaynak</dt><dd>{{ source_label(d.draw.source) }}</dd></div>
       <div><dt>Çekiliş tarihi</dt><dd>{{ d.draw.draw_date|istanbul }}</dd></div>
       <div><dt>Davet kodu</dt><dd>{% if d.draw.invite_code %}<code>{{ d.draw.invite_code }}</code>{% else %}—{% endif %}</dd></div>
       <div><dt>Adres isteniyor</dt><dd>{{ "Evet" if d.draw.require_address else "Hayır" }}</dd></div>
@@ -52,7 +53,7 @@
     {% if d.participants %}
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Ad</th><th>E-posta</th><th>Telefon</th><th>Adres</th><th>Katıldı</th></tr></thead>
+          <thead><tr><th>Ad</th><th>E-posta</th><th>Telefon</th><th>Adres</th><th>Katıldı</th><th>Kaynak</th></tr></thead>
           <tbody>
             {% for p in d.participants %}
               <tr>
@@ -61,6 +62,7 @@
                 <td class="nowrap">{{ p.phone or "—" }}</td>
                 <td class="address">{{ p.address or "—" }}</td>
                 <td class="nowrap">{{ p.created_at|istanbul }}</td>
+                <td>{{ source_label(p.source) }}</td>
               </tr>
             {% endfor %}
           </tbody>

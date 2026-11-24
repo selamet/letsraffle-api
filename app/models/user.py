@@ -27,6 +27,8 @@ class User(BaseModel):
     apple_refresh_token = Column(String(1024), nullable=True)
     # The client the refresh token belongs to (iOS bundle id or web Services ID).
     apple_client_id = Column(String(255), nullable=True)
+    # Client the account was created from (ios / web / unknown); NULL for accounts created before it was recorded.
+    source = Column(String(10), nullable=True)
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email})>"

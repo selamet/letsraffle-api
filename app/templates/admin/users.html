@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import pager, empty %}
+{% from "_macros.html" import pager, empty, source_label %}
 {% block title %}Kullanıcılar{% endblock %}
 {% block content %}
   <div class="page-head">
@@ -18,7 +18,7 @@
   {% if result.items %}
     <div class="table-wrap">
       <table>
-        <thead><tr><th>#</th><th>E-posta</th><th>Kayıt</th><th>Giriş yöntemi</th><th class="num">Çekiliş</th><th class="num">Cihaz</th></tr></thead>
+        <thead><tr><th>#</th><th>E-posta</th><th>Kayıt</th><th>Giriş yöntemi</th><th class="num">Çekiliş</th><th class="num">Cihaz</th><th>Kaynak</th></tr></thead>
         <tbody>
           {% for row in result.items %}
             <tr>
@@ -32,6 +32,7 @@
               </td>
               <td class="num">{{ row.draw_count }}</td>
               <td class="num">{{ row.device_count }}</td>
+              <td>{{ source_label(row.source) }}</td>
             </tr>
           {% endfor %}
         </tbody>

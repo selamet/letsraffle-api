@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import draws_table, participations_table, empty %}
+{% from "_macros.html" import draws_table, participations_table, empty, source_label %}
 {% block title %}{{ u.user.email }}{% endblock %}
 {% block content %}
   <p class="crumb"><a href="/admin/users">← Kullanıcılar</a></p>
@@ -10,6 +10,7 @@
       {% if u.user.password %}<span class="pill">Şifre</span>{% endif %}
       {% if u.user.has_apple %}<span class="pill">Apple</span>{% endif %}
       {% if u.user.has_google %}<span class="pill">Google</span>{% endif %}
+      · kayıt kaynağı: {{ source_label(u.user.source) }}
     </p>
   </div>
 

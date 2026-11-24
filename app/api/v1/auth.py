@@ -14,6 +14,7 @@ from app.schemas import (
 from app.api.deps import get_current_user
 from app.config import settings
 from app.core import apple, google
+from app.core.client_source import get_client_source
 from app.schemas.user import UserResponse
 from app.models.draw import Draw
 from app.models.device import Device
@@ -25,7 +26,11 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_data: UserCreate, db: Session = Depends(get_db)):
+async def register(
+    user_data: UserCreate,
+    db: Session = Depends(get_db),
+    source: str = Depends(get_client_source),
+):
     """
     Register a new user and return access token with user data
     
@@ -48,7 +53,8 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     hashed_password = User.hash_password(user_data.password)
     new_user = User(
         email=user_data.email,
-        password=hashed_password
+        password=hashed_password,
+        source=source
     )
 
     db.add(new_user)
@@ -228,7 +234,11 @@ def _token_response(user: User) -> dict:
 
 
 @router.post("/apple", response_model=TokenResponse)
-async def sign_in_with_apple(request: AppleSignInRequest, db: Session = Depends(get_db)):
+async def sign_in_with_apple(
+    request: AppleSignInRequest,
+    db: Session = Depends(get_db),
+    source: str = Depends(get_client_source),
+):
     """
     Sign in (or sign up) with an Apple identity token.
 
@@ -253,7 +263,7 @@ async def sign_in_with_apple(request: AppleSignInRequest, db: Session = Depends(
         if user:
             user.apple_sub = identity.sub
         else:
-            user = User(email=email, password=None, apple_sub=identity.sub)
+            user = User(email=email, password=None, apple_sub=identity.sub, source=source)
             db.add(user)
         db.commit()
         db.refresh(user)
@@ -276,7 +286,11 @@ async def sign_in_with_apple(request: AppleSignInRequest, db: Session = Depends(
 
 
 @router.post("/google", response_model=TokenResponse)
-async def sign_in_with_google(request: GoogleSignInRequest, db: Session = Depends(get_db)):
+async def sign_in_with_google(
+    request: GoogleSignInRequest,
+    db: Session = Depends(get_db),
+    source: str = Depends(get_client_source),
+):
     """
     Sign in (or sign up) with a Google ID token from the web (Google Identity Services) or iOS (GoogleSignIn).
 
@@ -307,7 +321,7 @@ async def sign_in_with_google(request: GoogleSignInRequest, db: Session = Depend
         if user:
             user.google_sub = identity.sub
         else:
-            user = User(email=email, password=None, google_sub=identity.sub)
+            user = User(email=email, password=None, google_sub=identity.sub, source=source)
             db.add(user)
         db.commit()
         db.refresh(user)

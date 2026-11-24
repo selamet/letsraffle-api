@@ -38,6 +38,8 @@ class Draw(BaseModel):
     require_phone = Column(Boolean(False), default=False)
     invite_code = Column(String(255), unique=True, nullable=True, index=True)
     language = Column(String(2), default=Language.TR.value, nullable=False)
+    # Client the draw was created from (ios / web / unknown); NULL for draws created before it was recorded.
+    source = Column(String(10), nullable=True, index=True)
     # Set once the "draw is tomorrow" push has been sent.
     reminder_sent_at = Column(DateTime(timezone=True), nullable=True)
     # Set once the "draw is tomorrow" e-mail has been sent to the organizer.
@@ -76,6 +78,8 @@ class Participant(BaseModel):
     email = Column(String(255), nullable=False)
     address = Column(String(500), nullable=True)
     phone = Column(String(50), nullable=True)
+    # Client the participant was added from (ios / web / unknown); NULL before it was recorded.
+    source = Column(String(10), nullable=True)
 
     draw = relationship("Draw", back_populates="participants")
 
